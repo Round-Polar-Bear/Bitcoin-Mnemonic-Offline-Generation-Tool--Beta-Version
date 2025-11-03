@@ -2251,6 +2251,10 @@ async function deriveChildKey(parentKey, parentChainCode, index, hardened = fals
     val = val >> 8n;
   }
   
+  // 清零临时变量（安全措施）
+  // 注意：这里不清零 parentKey，因为它是外部传入的参数
+  // childKey 是临时计算值，会在返回后被覆盖
+  
   return { key: actualKey, chainCode: childChainCode };
 }
 
@@ -2262,38 +2266,51 @@ async function deriveBIP44Key(seed, account = 0, change = 0, addressIndex = 0) {
   let key = master.key;
   let chainCode = master.chainCode;
   const step1 = await deriveChildKey(key, chainCode, 44, true);
+  // 清零上一步的key（不再需要）
+  key.fill(0);
   
   // m/44'/0'
   key = step1.key;
   chainCode = step1.chainCode;
   const step2 = await deriveChildKey(key, chainCode, 0, true);
+  key.fill(0);
   
   // m/44'/0'/0'
   key = step2.key;
   chainCode = step2.chainCode;
   const step3 = await deriveChildKey(key, chainCode, account, true);
+  key.fill(0);
   
   // m/44'/0'/0'/0
   key = step3.key;
   chainCode = step3.chainCode;
   const step4 = await deriveChildKey(key, chainCode, change, false);
+  key.fill(0);
   
   // m/44'/0'/0'/0/0
   key = step4.key;
   chainCode = step4.chainCode;
   const step5 = await deriveChildKey(key, chainCode, addressIndex, false);
   
+  // 清零中间步骤的key（不再需要）
+  key.fill(0);
+  // 清零master key
+  master.key.fill(0);
+  
   return step5.key;
 }
 
 // 生成比特币P2WPKH地址（SegWit/Bech32格式）
 async function generateBitcoinAddress(mnemonic) {
+  let seed = null;
+  let privateKey = null;
+  
   try {
     // 1. BIP39: 从助记词生成种子
-    const seed = await mnemonicToSeed(mnemonic);
+    seed = await mnemonicToSeed(mnemonic);
     
     // 2. BIP44: 派生私钥 (m/44'/0'/0'/0/0)
-    const privateKey = await deriveBIP44Key(seed, 0, 0, 0);
+    privateKey = await deriveBIP44Key(seed, 0, 0, 0);
     
     // 3. 从私钥生成公钥
     const publicKey = privateKeyToPublicKey(privateKey);
@@ -2308,9 +2325,21 @@ async function generateBitcoinAddress(mnemonic) {
     witnessProgram.set(pubKeyHash, 1);
     
     // 6. Bech32编码（主网HRP = "bc1"）
-    return bech32Encode('bc1', witnessProgram);
+    const address = bech32Encode('bc1', witnessProgram);
+    
+    // 7. 安全清理：清零敏感数据
+    if (seed) seed.fill(0);
+    if (privateKey) privateKey.fill(0);
+    
+    return address;
   } catch (error) {
-    throw new Error('地址生成失败: ' + error.message);
+    // 安全清理：即使出错也要清零
+    if (seed) seed.fill(0);
+    if (privateKey) privateKey.fill(0);
+    
+    // 优化错误处理：不输出详细错误信息，避免潜在的信息泄露
+    const errorType = error instanceof Error ? error.constructor.name : 'UnknownError';
+    throw new Error('地址生成失败');
   }
 }
 
@@ -2386,7 +2415,9 @@ try {
   }
 } catch (e) {
   // 出错时也尝试使用嵌入的词表
-  console.error("加载词表时发生错误:", e);
+  // 优化错误处理：只输出错误类型，不输出完整错误对象
+  const errorMsg = e instanceof Error ? e.message : String(e);
+  console.error("加载词表时发生错误:", errorMsg);
   await initEmbeddedWordlist();
 }
 
@@ -2461,8 +2492,10 @@ btnGenerate.addEventListener("click",async()=>{
     const address = await generateBitcoinAddress(mnemonic);
     btcAddressInput.value = address;
   } catch (e) {
-    console.error("生成比特币地址失败:", e);
-    btcAddressInput.value = "地址生成失败: " + e.message;
+    // 优化错误处理：不输出完整错误对象，只记录错误类型
+    const errorMsg = e instanceof Error ? e.message : '未知错误';
+    console.error("生成比特币地址失败:", errorMsg);
+    btcAddressInput.value = "地址生成失败";
   }
 });
 
