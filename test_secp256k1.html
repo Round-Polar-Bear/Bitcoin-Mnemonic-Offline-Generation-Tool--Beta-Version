@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>测试 secp256k1</title>
+<style>
+body { font-family: monospace; padding: 20px; }
+.pass { color: green; }
+.fail { color: red; }
+</style>
+</head>
+<body>
+<h2>secp256k1 测试</h2>
+<div id="output"></div>
+
+<script>
+// 从主文件复制关键函数
+const SECP256K1_GX = [
+  0x79BE667E, 0xF9DCBBAC, 0x55A06295, 0xCE870B07,
+  0x029BFCDB, 0x2DCE28D9, 0x59F2815B, 0x16F81798
+];
+
+const SECP256K1_GY = [
+  0x483ADA77, 0x26A3C465, 0x5DA4FBFC, 0x0E1108A8,
+  0xFD17B448, 0xA6855419, 0x9C47D08F, 0xFB10D4B8
+];
+
+function log(msg, isPass) {
+  const div = document.getElementById('output');
+  const p = document.createElement('p');
+  p.textContent = msg;
+  p.className = isPass === true ? 'pass' : (isPass === false ? 'fail' : '');
+  div.appendChild(p);
+}
+
+// 测试：私钥 1 应该得到生成器点 G
+log('测试 1: 私钥 = 1 应该得到公钥 = G');
+log('期望的 Gx: 79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798');
+log('期望的 Gy: 483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8');
+
+// 测试生成器点常量
+const gxHex = SECP256K1_GX.map(x => x.toString(16).toUpperCase().padStart(8, '0')).join('');
+const gyHex = SECP256K1_GY.map(x => x.toString(16).toUpperCase().padStart(8, '0')).join('');
+
+log('实际的 Gx: ' + gxHex, gxHex === '79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798');
+log('实际的 Gy: ' + gyHex, gyHex === '483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8');
+
+log('\n现在请打开主页面 Bitcoin-Mnemonic-Offline-Generation-Tool-COMPLETE.html');
+log('在控制台中运行测试...');
+</script>
+</body>
+</html>

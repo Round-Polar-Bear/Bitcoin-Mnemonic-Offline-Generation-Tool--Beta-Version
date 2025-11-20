@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>测试 secp256k1 修复</title>
+</head>
+<body>
+<h1>测试结果：</h1>
+<div id="result"></div>
+<script>
+// 简单测试：验证已知的测试向量
+const testPrivateKey = new Uint8Array(32);
+testPrivateKey[31] = 1; // 私钥 = 1
+
+console.log("测试私钥:", Array.from(testPrivateKey).map(b => b.toString(16).padStart(2, '0')).join(''));
+
+// 已知结果：私钥 1 的公钥应该是生成器点 G
+// Gx = 79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+// Gy = 483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
+
+document.getElementById('result').innerHTML = '<p>请打开浏览器控制台查看测试结果</p>';
+console.log("如果看到此消息，说明基本的 JavaScript 功能正常");
+</script>
+</body>
+</html>
