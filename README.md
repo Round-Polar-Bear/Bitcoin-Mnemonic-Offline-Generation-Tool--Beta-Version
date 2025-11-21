@@ -156,6 +156,36 @@ SHA-256: 9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a
 > **更新日期 | Last Updated:** 2025-11-21
 > **版本 | Version:** v3.0 (安全增强版 - 已移除外部词表加载)
 
+### ⚠️ 重要说明：两个不同的哈希值 | Important: Two Different Hashes
+
+**中文：**
+本工具有**两个不同的SHA-256哈希值**，请不要混淆：
+
+1. **HTML文件哈希（上方显示）**: `9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a`
+   - **用途**：验证整个HTML文件是否被篡改
+   - **验证方式**：使用系统命令计算文件哈希（见下方说明）
+
+2. **内置词表哈希（网页中显示）**: `187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae`
+   - **用途**：验证BIP39标准英文词表（2048个单词）的正确性
+   - **显示位置**：打开网页后自动显示在页面顶部
+
+✅ **这两个哈希值本来就不同，都是正确的！**
+
+**English:**
+This tool has **two different SHA-256 hashes** - please don't confuse them:
+
+1. **HTML File Hash (shown above)**: `9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a`
+   - **Purpose**: Verify the entire HTML file hasn't been tampered with
+   - **How to verify**: Use system commands to calculate file hash (see below)
+
+2. **Embedded Wordlist Hash (shown in webpage)**: `187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae`
+   - **Purpose**: Verify the BIP39 standard English wordlist (2048 words) is correct
+   - **Display location**: Automatically shown at the top of the page after loading
+
+✅ **Both hashes are different and both are correct!**
+
+---
+
 ### 如何验证 | How to Verify
 
 #### 在 macOS / Linux 上：
