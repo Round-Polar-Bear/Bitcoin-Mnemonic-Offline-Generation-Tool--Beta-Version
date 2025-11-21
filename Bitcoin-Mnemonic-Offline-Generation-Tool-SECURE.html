@@ -1,28 +1,42 @@
 <html lang="zh-CN"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-<!-- 安全策略：禁止所有外部资源加载 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:;">
+<!-- 安全策略：禁止所有外部资源加载 - 增强版 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests;">
 <title>比特币助记词生成工具 - 安全加固版</title>
 
 <!--
     ============================================
-    ⚠️  安全增强版本  ⚠️
+    ⚠️  安全增强版本 v3.0  ⚠️
     ============================================
-    
+
     本版本已进行以下安全加固：
     1. ✅ 移除所有外部字体引用，防止网络请求
     2. ✅ 添加严格的 CSP 策略，禁止外部资源
     3. ✅ 使用系统字体，确保完全离线
     4. ✅ 减少调试信息输出
-    
+    5. ✅ 页面卸载时自动清理敏感数据 (v2.0)
+    6. ✅ 增强型CSP防护策略 (v2.0)
+       - connect-src 'none' - 禁止网络连接
+       - object-src 'none' - 禁止插件加载
+       - base-uri 'none' - 防止base标签注入
+       - form-action 'none' - 禁止表单提交
+       - frame-ancestors 'none' - 防止被嵌入iframe
+    7. ✅ 完全移除外部词表加载功能 (v3.0 NEW)
+       - 删除自动加载本地文件功能
+       - 删除手动上传词表功能
+       - 消除恶意词表注入风险
+       - 仅使用内置标准BIP39词表
+
     ⚠️  重要提醒  ⚠️
     - 请务必在完全离线环境中使用
     - 使用前断开所有网络连接
     - 生成助记词后请妥善保管
     - 不要截图或拍照
     - 使用完毕后清除浏览器缓存
-    
+    - 关闭页面时会自动清理显示的敏感数据
+    - 仅使用内置的标准BIP39词表（已验证）
+
     ============================================
 -->
 
@@ -1502,14 +1516,12 @@ a:hover {
   <div class="warning-icon">⚠️</div>
   <div class="warning-content">
     <strong>安全提示</strong>
-    <div class="warning-text">请在离线环境中使用本页面。内置 BIP39 标准英文词表（2048 词），显示 SHA256 校验值。如存在 english.txt 文件会自动加载（覆盖内置词表），也可手动上传文件覆盖。</div>
+    <div class="warning-text">请在完全离线环境中使用本页面。本工具使用内置的标准 BIP39 英文词表（2048 词），并显示 SHA-256 校验值供验证。为确保最高安全性，已禁用外部词表加载功能。</div>
   </div>
 </div>
 
 <div class="file-input">
-<label for="wordlist">上传 BIP39 英文词表 (english.txt) - 可选，覆盖内置词表：</label>
-<input type="file" id="wordlist" accept=".txt">
-<div id="sha256-display">SHA256: 187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae (默认加载)</div>
+<div id="sha256-display" style="margin: 0; padding: 8px 0;">SHA256: 计算中...</div>
 </div>
 
 <div class="options">
@@ -2933,86 +2945,34 @@ async function initEmbeddedWordlist() {
   return true;
 }
 
-// 自动加载 english.txt（如果存在，会覆盖嵌入的词表）
-async function loadDefaultWordlist() {
-  // 尝试多个可能的路径
-  const possiblePaths = [
-    "english.txt",
-    "./english.txt",
-    new URL("english.txt", window.location.href).href,
-    new URL("./english.txt", window.location.href).href
-  ];
-  
-  for (const path of possiblePaths) {
-    try {
-      const resp = await fetch(path);
-      if (!resp.ok) continue; // 尝试下一个路径
-      
-      const buf = await resp.arrayBuffer();
-      const text = new TextDecoder().decode(buf);
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-      
-      if (lines.length !== 2048) {
-        throw new Error("english.txt 行数不为 2048");
-      }
-      
-      // 清空并加载外部文件
-      WORDLIST.splice(0, WORDLIST.length, ...lines);
-      const hashHex = await sha256(buf);
-      shaDisplay.textContent = "SHA256: " + hashHex + " (外部文件加载)";
-      shaDisplay.style.color = "";
-      btnGenerate.disabled = false;
-      btn12.disabled = false;
-      return true; // 成功加载外部文件
-    } catch (e) {
-      // 继续尝试下一个路径
-      continue;
-    }
-  }
-  
-  return false; // 外部文件加载失败
-}
+// ========== 外部词表加载功能已移除（安全增强）==========
+//
+// 安全说明：为了最大化安全性，已删除自动加载和手动上传外部词表的功能。
+//
+// 删除理由：
+// 1. 防止恶意词表注入攻击
+// 2. 消除社会工程攻击风险
+// 3. 符合"默认安全"设计原则
+// 4. 减少攻击面
+//
+// 当前行为：工具现在仅使用内置的标准 BIP39 英文词表（2048词）。
+// 词表验证：内置词表的 SHA-256 哈希会在页面加载时显示。
+// 如需审计：请查看源代码中的 EMBEDDED_BIP39_WORDLIST 变量。
+//
+// ======================================================
 
-// 初始化词表：优先尝试加载外部文件，失败则使用嵌入的词表
+// 初始化词表：直接使用内置的标准词表
 try {
-  const loadedExternal = await loadDefaultWordlist();
-  if (!loadedExternal) {
-    // 外部文件不存在或无法加载，使用嵌入的词表
-    await initEmbeddedWordlist();
-  }
-} catch (e) {
-  // 出错时也尝试使用嵌入的词表
-  // 优化错误处理：只输出错误类型，不输出完整错误对象
-  const errorMsg = e instanceof Error ? e.message : String(e);
-  console.error("加载词表时发生错误:", errorMsg);
   await initEmbeddedWordlist();
+} catch (e) {
+  // 错误处理：如果内置词表初始化失败，显示错误
+  const errorMsg = e instanceof Error ? e.message : String(e);
+  console.error("初始化内置词表时发生错误:", errorMsg);
+  alert("词表初始化失败，请刷新页面重试");
 }
 
-document.getElementById("wordlist").addEventListener("change",async e=>{
-  const file=e.target.files[0];
-  if(!file)return;
-  
-  showLoading(shaDisplay);
-  
-  const buf=await file.arrayBuffer();
-  const text=new TextDecoder().decode(buf);
-  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-  if(lines.length!==2048){
-    hideLoading(shaDisplay);
-    shaDisplay.textContent = "词表行数不是 2048";
-    shaDisplay.style.color = "#e53e3e";
-    setTimeout(() => {
-      shaDisplay.style.color = "";
-    }, 3000);
-    return;
-  }
-  WORDLIST.splice(0,WORDLIST.length,...lines);
-  const hashHex=await sha256(buf);
-  hideLoading(shaDisplay);
-  shaDisplay.textContent="SHA256: "+hashHex+" (已手动上传)";
-  btnGenerate.disabled=false;
-  btn12.disabled=false;
-});
+// 手动上传词表功能已移除（安全原因）
+// 原事件监听器已删除，对应的UI元素也将被移除
 
 btnGenerate.addEventListener("click",async()=>{
   if(WORDLIST.length!==2048){alert("请先加载词表");return;}
@@ -3301,6 +3261,64 @@ async function runAllTests() {
 window.runRIPEMD160Tests = runRIPEMD160Tests;
 window.runAddressGenerationTests = runAddressGenerationTests;
 window.runAllTests = runAllTests;
+
+// ========== 安全增强：页面卸载时清理敏感数据 ==========
+// 当用户关闭标签页或浏览器时，自动清理可能包含敏感信息的DOM元素
+function cleanupSensitiveData() {
+  try {
+    // 清理助记词显示区域
+    const mnemonicDiv = document.getElementById('mnemonic');
+    if (mnemonicDiv) {
+      // 清空所有子元素
+      while (mnemonicDiv.firstChild) {
+        mnemonicDiv.removeChild(mnemonicDiv.firstChild);
+      }
+      mnemonicDiv.textContent = '';
+    }
+
+    // 清理地址输入框
+    const addressInput = document.getElementById('btc-address');
+    if (addressInput) {
+      addressInput.value = '';
+    }
+
+    // 清理词表SHA256显示（虽然不是敏感信息，但为了一致性）
+    const shaDisplay = document.getElementById('sha-display');
+    if (shaDisplay) {
+      shaDisplay.textContent = '';
+    }
+
+    // 尝试清理WORDLIST（虽然词表本身不是敏感信息）
+    // 注意：不完全清空，因为这是标准词表
+    // 如果用户加载了自定义词表，这里会清理
+
+    // 清理可能的剪贴板内容（注意：某些浏览器可能不允许）
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText('').catch(() => {
+        // 忽略错误，某些浏览器在页面卸载时不允许操作剪贴板
+      });
+    }
+
+  } catch (error) {
+    // 静默处理错误，避免影响页面正常卸载
+    console.error('清理敏感数据时出错:', error);
+  }
+}
+
+// 注册页面卸载事件监听器
+window.addEventListener('beforeunload', cleanupSensitiveData);
+
+// 也监听 pagehide 事件（更可靠，特别是在移动设备上）
+window.addEventListener('pagehide', cleanupSensitiveData);
+
+// 监听 visibilitychange 事件，当页面隐藏时也进行清理
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    cleanupSensitiveData();
+  }
+});
+
+console.log('✓ 页面卸载安全清理已启用');
 
 console.log('单元测试已加载！');
 console.log('使用方法：');
