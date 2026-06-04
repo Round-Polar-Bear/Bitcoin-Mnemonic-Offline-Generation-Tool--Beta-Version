@@ -1,8 +1,9 @@
-# Bitcoin 助记词离线生成工具 v3.0（安全增强版）
-# Bitcoin Mnemonic Offline Generation Tool v3.0 (SECURE)
+# Bitcoin 助记词离线生成工具 v4.0（安全增强版）
+# Bitcoin Mnemonic Offline Generation Tool v4.0 (SECURE)
 
-**最新版本 | Latest Version:** v3.0 (2025-11-21)
-**安全评分 | Security Rating:** 9.9/10 ⭐⭐⭐⭐⭐
+**最新版本 | Latest Version:** v4.0 (2026-06-04)
+
+> v4.0 更新详情请查看 [CHANGELOG-v4.0.md](CHANGELOG-v4.0.md)。
 
 ---
 
@@ -18,9 +19,10 @@ After downloading, directly open this file:
 ```
 
 **使用方法 | How to Use:**
-1. 双击打开 `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html`
-2. 在浏览器中自动打开（推荐使用 Chrome、Edge 或 Firefox）
-3. 开始生成助记词
+1. 断开网络并禁用浏览器扩展
+2. 打开 `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html`
+3. 确认页面安全自检通过，生成按钮已启用
+4. 开始生成助记词
 
 *Double-click to open in your browser (Chrome, Edge, or Firefox recommended)*
 
@@ -29,10 +31,10 @@ After downloading, directly open this file:
 ## 📖 简介 | Introduction
 
 **中文：**
-这是一个完全离线的比特币助记词生成工具，可在无需联网的情况下安全生成 BIP39 助记词和比特币地址。所有密码学运算（PBKDF2、HMAC-SHA512、SHA-256、RIPEMD-160、secp256k1、Bech32 编码）均内置于单个 HTML 文件中，无需任何外部依赖。
+这是一个完全离线的比特币助记词生成工具，可在无需联网的情况下生成 BIP39 助记词和对应的 BIP84 首地址。工具强制使用浏览器原生 WebCrypto 执行 SHA-256、HMAC-SHA512 和 PBKDF2；RIPEMD-160、secp256k1 和 Bech32 地址逻辑包含在单个 HTML 文件中，无需加载外部资源。
 
 **English:**
-A fully offline Bitcoin mnemonic phrase generator that securely creates BIP39 mnemonics and Bitcoin addresses without internet connection. All cryptographic operations (PBKDF2, HMAC-SHA512, SHA-256, RIPEMD-160, secp256k1, Bech32 encoding) are embedded in a single HTML file with no external dependencies.
+A fully offline Bitcoin mnemonic generator that creates BIP39 mnemonics and their first BIP84 address. SHA-256, HMAC-SHA512, and PBKDF2 are provided by the browser's native WebCrypto API; no external resources are loaded.
 
 > **原始出处 | Original Source:** https://bip39.btchao.com/
 
@@ -45,7 +47,9 @@ A fully offline Bitcoin mnemonic phrase generator that securely creates BIP39 mn
 - ✅ Generates 12/24-word mnemonics using secure browser RNG
 - 🎯 支持 BIP84 (P2WPKH) 地址推导 (路径: `m/84'/0'/0'/0/0`)
 - 📝 内嵌 BIP39 官方 2048 英文词表 | Embedded official BIP39 wordlist
-- 🔍 内置自检向量，确保实现正确性 | Built-in test vectors
+- 🔍 强制 WebCrypto 并执行标准向量安全自检
+- 🔁 助记词反向还原、地址二次派生和 Bech32 格式校验
+- 🛑 任一安全校验失败时禁止显示结果
 
 ### 隐私保护 | Privacy Protection
 - 🔒 完全离线运行，无网络请求 | Fully offline, no network requests
@@ -72,7 +76,7 @@ A fully offline Bitcoin mnemonic phrase generator that securely creates BIP39 mn
 
 ## 🔧 详细使用步骤 | Detailed Usage
 
-### 方法一：直接打开（推荐）| Method 1: Direct Open (Recommended)
+### 方法一：直接打开 | Method 1: Direct Open
 
 1. **断开网络连接** | **Disconnect from internet**
 2. **双击打开** `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html`
@@ -81,9 +85,9 @@ A fully offline Bitcoin mnemonic phrase generator that securely creates BIP39 mn
 5. 点击"生成"按钮 | Click "Generate"
 6. 安全保存生成的助记词 | Save your mnemonic securely
 
-### 方法二：通过本地服务器（可选）| Method 2: Local Server (Optional)
+### 方法二：通过本地服务器（兼容性更好）| Method 2: Local Server
 
-某些浏览器在 `file://` 协议下可能限制 WebCrypto API。如遇问题，可使用本地服务器：
+本版本强制要求完整 WebCrypto。某些浏览器在 `file://` 协议下可能限制 WebCrypto API；如安全自检失败，请保持设备断网并使用本地服务器：
 
 **使用 Node.js:**
 ```bash
@@ -129,6 +133,7 @@ python3 -m http.server 8000
 |-------------|-------------------|
 | **Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html** | ⭐ 主程序文件（请打开此文件使用）<br>Main application file (Open this to use) |
 | README.md | 本说明文档 / This documentation |
+| CHANGELOG-v4.0.md | v4.0 安全更新说明 / v4.0 security changelog |
 | SECURITY-AUDIT-REPORT.md | 安全审计报告 / Security audit report |
 | SECURITY_IMPROVEMENTS_REPORT.md | 安全改进报告 / Security improvements report |
 | package.json | 开发依赖配置 / Development dependencies |
@@ -150,18 +155,18 @@ Before using this tool, it's strongly recommended to verify file integrity to en
 **Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html**
 
 ```
-SHA-256: 9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a
+SHA-256: bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614
 ```
 
-> **更新日期 | Last Updated:** 2025-11-21
-> **版本 | Version:** v3.0 (安全增强版 - 已移除外部词表加载)
+> **更新日期 | Last Updated:** 2026-06-04
+> **版本 | Version:** v4.0 (安全增强版)
 
 ### ⚠️ 重要说明：两个不同的哈希值 | Important: Two Different Hashes
 
 **中文：**
 本工具有**两个不同的SHA-256哈希值**，请不要混淆：
 
-1. **HTML文件哈希（上方显示）**: `9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a`
+1. **HTML文件哈希（上方显示）**: `bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614`
    - **用途**：验证整个HTML文件是否被篡改
    - **验证方式**：使用系统命令计算文件哈希（见下方说明）
 
@@ -174,7 +179,7 @@ SHA-256: 9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a
 **English:**
 This tool has **two different SHA-256 hashes** - please don't confuse them:
 
-1. **HTML File Hash (shown above)**: `9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a`
+1. **HTML File Hash (shown above)**: `bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614`
    - **Purpose**: Verify the entire HTML file hasn't been tampered with
    - **How to verify**: Use system commands to calculate file hash (see below)
 
@@ -225,7 +230,7 @@ CertUtil -hashfile Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html SHA256
 
 **示例输出：**
 ```
-✓ 正确：9d3179be5011facc51a3037cbd98819d708eda83c76b671872d7f261aa6d401a
+✓ 正确：bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614
 ✗ 错误：任何不同的哈希值都意味着文件已被修改
 ```
 
