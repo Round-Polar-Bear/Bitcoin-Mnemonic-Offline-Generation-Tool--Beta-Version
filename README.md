@@ -53,7 +53,7 @@ A fully offline Bitcoin mnemonic generator that creates BIP39 mnemonics and thei
 
 ### 隐私保护 | Privacy Protection
 - 🔒 完全离线运行，无网络请求 | Fully offline, no network requests
-- 🧹 使用后自动清零敏感数据（熵、种子、私钥）| Auto-clear sensitive data
+- 🧹 尽力清理敏感数据：二进制熵、种子、私钥会主动清零，页面显示内容会在清除或关闭时移除
 - 🛡️ **页面关闭时自动清理显示的助记词 (v2.0 新增)**
 - 🛡️ **Auto-cleanup on page unload (v2.0 NEW)**
 - 🚫 零追踪代码，零分析脚本 | No tracking, no analytics
@@ -87,20 +87,13 @@ A fully offline Bitcoin mnemonic generator that creates BIP39 mnemonics and thei
 
 ### 方法二：通过本地服务器（兼容性更好）| Method 2: Local Server
 
-本版本强制要求完整 WebCrypto。某些浏览器在 `file://` 协议下可能限制 WebCrypto API；如安全自检失败，请保持设备断网并使用本地服务器：
-
-**使用 Node.js:**
-```bash
-cd 项目目录
-npx serve
-# 然后在浏览器访问 http://localhost:3000
-```
+本版本强制要求完整 WebCrypto。某些浏览器在 `file://` 协议下可能限制 WebCrypto API；如安全自检失败，请保持设备断网并使用本地服务器。优先使用系统已安装的 Python，避免在离线使用时运行可能联网下载依赖的命令。
 
 **使用 Python:**
 ```bash
 cd 项目目录
-python3 -m http.server 8000
-# 然后在浏览器访问 http://localhost:8000
+python3 -m http.server 8000 --bind 127.0.0.1
+# 然后在浏览器访问 http://127.0.0.1:8000/Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html
 ```
 
 ---
@@ -115,6 +108,7 @@ python3 -m http.server 8000
 - ✅ **安全备份**：将助记词手写在纸上，不要截图或云端存储
 - ✅ **交叉验证**：用其他钱包（如硬件钱包）验证生成的地址
 - ✅ **清理痕迹**：使用后关闭浏览器、清空缓存和剪贴板
+- ⚠️ **浏览器内存限制**：JavaScript 字符串无法保证原地清零，请在可信、干净、离线环境中运行
 - ⚠️ **测试先行**：首次使用先发送小额测试
 
 **English:**
@@ -123,6 +117,7 @@ python3 -m http.server 8000
 - ✅ **Secure Backup**: Write mnemonic on paper, no screenshots or cloud
 - ✅ **Cross Verification**: Verify address with another wallet (hardware wallet)
 - ✅ **Clean Traces**: Close browser, clear cache and clipboard after use
+- ⚠️ **Browser Memory Limit**: JavaScript strings cannot be guaranteed to be wiped in place; use a trusted, clean, offline environment
 - ⚠️ **Test First**: Send small amount first to test
 
 ---
@@ -136,7 +131,8 @@ python3 -m http.server 8000
 | CHANGELOG-v4.0.md | v4.0 安全更新说明 / v4.0 security changelog |
 | SECURITY-AUDIT-REPORT.md | 安全审计报告 / Security audit report |
 | SECURITY_IMPROVEMENTS_REPORT.md | 安全改进报告 / Security improvements report |
-| package.json | 开发依赖配置 / Development dependencies |
+| package.json | 开发验证依赖配置 / Development verification dependencies |
+| scripts/verify-vectors.js | 独立库 BIP84 地址向量验证脚本 / Independent BIP84 vector test |
 
 ---
 

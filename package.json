@@ -1,24 +1,30 @@
 {
-  "name": "hubble-mnemonic-generator2.0",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "bitcoin-mnemonic-offline-generation-tool",
+  "version": "4.0.0",
+  "description": "Offline BIP39 mnemonic and BIP84 Bitcoin address generator verification helpers.",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/verify-vectors.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wy-hero/Bitcoin-BIP39-Mnemonic-Phrase-Offline-Generation-Tool.git"
+    "url": "git+https://github.com/Round-Polar-Bear/Bitcoin-Mnemonic-Offline-Generation-Tool--Beta-Version.git"
   },
-  "keywords": [],
+  "keywords": [
+    "bitcoin",
+    "bip39",
+    "bip84",
+    "mnemonic",
+    "offline"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/wy-hero/Bitcoin-BIP39-Mnemonic-Phrase-Offline-Generation-Tool/issues"
+    "url": "https://github.com/Round-Polar-Bear/Bitcoin-Mnemonic-Offline-Generation-Tool--Beta-Version/issues"
   },
-  "homepage": "https://github.com/wy-hero/Bitcoin-BIP39-Mnemonic-Phrase-Offline-Generation-Tool#readme",
-  "dependencies": {
+  "homepage": "https://github.com/Round-Polar-Bear/Bitcoin-Mnemonic-Offline-Generation-Tool--Beta-Version#readme",
+  "devDependencies": {
     "@noble/hashes": "^2.0.1",
     "@scure/base": "^2.0.0",
     "@scure/bip32": "^2.0.1",
