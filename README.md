@@ -1,330 +1,139 @@
-# Bitcoin 助记词离线生成工具 v4.0（安全增强版）
-# Bitcoin Mnemonic Offline Generation Tool v4.0 (SECURE)
+# Bitcoin 助记词离线生成工具 v5.1
 
-**最新版本 | Latest Version:** v4.0 (2026-06-04)
+用于在完全离线环境中生成 BIP39 英文助记词，并派生 Bitcoin 主网 BIP84 Native SegWit 首地址。
 
-> v4.0 更新详情请查看 [CHANGELOG-v4.0.md](CHANGELOG-v4.0.md)。
+## 唯一推荐入口
 
----
+请只使用：
 
-## 🚀 快速开始 | Quick Start
-
-### 📂 **重要：使用哪个文件？ | Which File to Use?**
-
-下载本项目后，请直接打开以下文件：
-After downloading, directly open this file:
-
-```
-📄 Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html
+```text
+Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html
 ```
 
-**使用方法 | How to Use:**
-1. 断开网络并禁用浏览器扩展
-2. 打开 `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html`
-3. 确认页面安全自检通过，生成按钮已启用
-4. 开始生成助记词
+`Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html` 是不支持 Passphrase 的历史对照版本，不建议再用于创建新钱包。
 
-*Double-click to open in your browser (Chrome, Edge, or Firefox recommended)*
+当前固定参数：
 
----
+- Bitcoin 主网
+- Native SegWit P2WPKH，地址以 `bc1q` 开头
+- 派生路径 `m/84'/0'/0'/0/0`
+- 12 或 24 个 BIP39 英文单词
+- 可选 BIP39 Passphrase
 
-## 📖 简介 | Introduction
+## 使用方法
 
-**中文：**
-这是一个完全离线的比特币助记词生成工具，可在无需联网的情况下生成 BIP39 助记词和对应的 BIP84 首地址。工具强制使用浏览器原生 WebCrypto 执行 SHA-256、HMAC-SHA512 和 PBKDF2；RIPEMD-160、secp256k1 和 Bech32 地址逻辑包含在单个 HTML 文件中，无需加载外部资源。
+1. 使用干净、可信的设备，禁用浏览器扩展和密码管理器。
+2. 物理断开网络，包括 Wi-Fi、网线、蓝牙共享和蜂窝网络。
+3. 校验 `SHA256SUMS`。
+4. 双击打开推荐的 HTML 文件。
+5. 选择 12 或 24 词；如启用 Passphrase，必须在两个输入框中逐字输入一致。
+6. 手写备份助记词和 Passphrase，不要截图、拍照、打印或保存到云端。
+7. 在另一款可信离线钱包中恢复，并核对首地址和路径。
+8. 首次使用只进行小额收款与发送测试。
+9. 完成后点击“清除”，关闭整个浏览器；该操作只能尽力减少残留，不能保证擦除浏览器内存或系统交换区。
 
-**English:**
-A fully offline Bitcoin mnemonic generator that creates BIP39 mnemonics and their first BIP84 address. SHA-256, HMAC-SHA512, and PBKDF2 are provided by the browser's native WebCrypto API; no external resources are loaded.
+### 本地文件无法运行时
 
-> **原始出处 | Original Source:** https://bip39.btchao.com/
+只有在浏览器限制 `file://` 下的 WebCrypto 时，才使用本机回环服务器：
 
----
-
-## ✨ 核心特性 | Core Features
-
-### 密码学安全 | Cryptographic Security
-- ✅ 使用浏览器安全随机数 `crypto.getRandomValues` 生成 12/24 词助记词
-- ✅ Generates 12/24-word mnemonics using secure browser RNG
-- 🎯 支持 BIP84 (P2WPKH) 地址推导 (路径: `m/84'/0'/0'/0/0`)
-- 📝 内嵌 BIP39 官方 2048 英文词表 | Embedded official BIP39 wordlist
-- 🔍 强制 WebCrypto 并执行标准向量安全自检
-- 🔁 助记词反向还原、地址二次派生和 Bech32 格式校验
-- 🛑 任一安全校验失败时禁止显示结果
-
-### 隐私保护 | Privacy Protection
-- 🔒 完全离线运行，无网络请求 | Fully offline, no network requests
-- 🧹 尽力清理敏感数据：二进制熵、种子、私钥会主动清零，页面显示内容会在清除或关闭时移除
-- 🛡️ **页面关闭时自动清理显示的助记词 (v2.0 新增)**
-- 🛡️ **Auto-cleanup on page unload (v2.0 NEW)**
-- 🚫 零追踪代码，零分析脚本 | No tracking, no analytics
-
-### 安全防护 | Security Protection
-- 🔐 **增强型 CSP 策略 (v2.0)** | Enhanced CSP policy
-  - ✅ 禁止所有外部资源加载 | Block all external resources
-  - ✅ 禁止网络连接 (`connect-src 'none'`)
-  - ✅ 禁止插件加载 (`object-src 'none'`)
-  - ✅ 防止表单劫持 (`form-action 'none'`)
-  - ✅ 防止iframe嵌入 (`frame-ancestors 'none'`)
-- 🔒 使用 `textContent` 防止 XSS 攻击
-- 🔒 无 `eval()` 或动态代码执行
-- 🛡️ **完全移除外部词表加载 (v3.0 新增)** | Removed external wordlist loading
-  - ✅ 消除恶意词表注入风险 | Eliminates malicious wordlist injection
-  - ✅ 仅使用内置标准BIP39词表 | Only uses embedded standard BIP39 wordlist
-  - ✅ 符合"默认安全"原则 | Follows "secure by default" principle
-
----
-
-## 🔧 详细使用步骤 | Detailed Usage
-
-### 方法一：直接打开 | Method 1: Direct Open
-
-1. **断开网络连接** | **Disconnect from internet**
-2. **双击打开** `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html`
-3. 浏览器会自动加载页面
-4. 选择 12 词或 24 词 | Choose 12 or 24 words
-5. 点击"生成"按钮 | Click "Generate"
-6. 安全保存生成的助记词 | Save your mnemonic securely
-
-### 方法二：通过本地服务器（兼容性更好）| Method 2: Local Server
-
-本版本强制要求完整 WebCrypto。某些浏览器在 `file://` 协议下可能限制 WebCrypto API；如安全自检失败，请保持设备断网并使用本地服务器。优先使用系统已安装的 Python，避免在离线使用时运行可能联网下载依赖的命令。
-
-**使用 Python:**
 ```bash
-cd 项目目录
+cd /path/to/Bitcoin-Mnemonic-Offline-Generation-Tool--Beta-Version-main
 python3 -m http.server 8000 --bind 127.0.0.1
-# 然后在浏览器访问 http://127.0.0.1:8000/Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html
 ```
 
----
+然后访问：
 
-## 🔐 安全操作清单 | Security Checklist
-
-### ⚠️ 使用前必读 | Must Read Before Use
-
-**中文：**
-- ✅ **断网操作**：生成助记词前务必断开所有网络连接
-- ✅ **可信设备**：使用干净的设备或可信的 Live OS 环境
-- ✅ **安全备份**：将助记词手写在纸上，不要截图或云端存储
-- ✅ **交叉验证**：用其他钱包（如硬件钱包）验证生成的地址
-- ✅ **清理痕迹**：使用后关闭浏览器、清空缓存和剪贴板
-- ⚠️ **浏览器内存限制**：JavaScript 字符串无法保证原地清零，请在可信、干净、离线环境中运行
-- ⚠️ **测试先行**：首次使用先发送小额测试
-
-**English:**
-- ✅ **Offline Mode**: Disconnect from internet before generating
-- ✅ **Trusted Device**: Use clean device or trusted Live OS
-- ✅ **Secure Backup**: Write mnemonic on paper, no screenshots or cloud
-- ✅ **Cross Verification**: Verify address with another wallet (hardware wallet)
-- ✅ **Clean Traces**: Close browser, clear cache and clipboard after use
-- ⚠️ **Browser Memory Limit**: JavaScript strings cannot be guaranteed to be wiped in place; use a trusted, clean, offline environment
-- ⚠️ **Test First**: Send small amount first to test
-
----
-
-## 📁 项目文件说明 | Project Files
-
-| 文件 / File | 说明 / Description |
-|-------------|-------------------|
-| **Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html** | ⭐ 主程序文件（请打开此文件使用）<br>Main application file (Open this to use) |
-| README.md | 本说明文档 / This documentation |
-| CHANGELOG-v4.0.md | v4.0 安全更新说明 / v4.0 security changelog |
-| SECURITY-AUDIT-REPORT.md | 安全审计报告 / Security audit report |
-| SECURITY_IMPROVEMENTS_REPORT.md | 安全改进报告 / Security improvements report |
-| package.json | 开发验证依赖配置 / Development verification dependencies |
-| scripts/verify-vectors.js | 独立库 BIP84 地址向量验证脚本 / Independent BIP84 vector test |
-
----
-
-## 🔐 文件完整性验证 | File Integrity Verification
-
-### 为什么需要验证？ | Why Verify?
-
-**中文：**
-在使用本工具前，强烈建议验证文件完整性，确保文件未被篡改。恶意修改可能导致助记词泄露或资金损失。
-
-**English:**
-Before using this tool, it's strongly recommended to verify file integrity to ensure it hasn't been tampered with. Malicious modifications could lead to mnemonic leakage or fund loss.
-
-### 文件哈希值 | File Hash
-
-**Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html**
-
-```
-SHA-256: bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614
+```text
+http://127.0.0.1:8000/Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html
 ```
 
-> **更新日期 | Last Updated:** 2026-06-04
-> **版本 | Version:** v4.0 (安全增强版)
+不要使用 `npx serve`，不要绑定 `0.0.0.0`，也不要在联网状态下启动本地服务。
 
-### ⚠️ 重要说明：两个不同的哈希值 | Important: Two Different Hashes
+## Passphrase 安全要求
 
-**中文：**
-本工具有**两个不同的SHA-256哈希值**，请不要混淆：
+BIP39 Passphrase 不是助记词的一部分，没有“找回”功能。任何大小写、空格或字符差异都会得到另一个钱包。
 
-1. **HTML文件哈希（上方显示）**: `bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614`
-   - **用途**：验证整个HTML文件是否被篡改
-   - **验证方式**：使用系统命令计算文件哈希（见下方说明）
+- 姓名、生日、名言、短密码和常见句子几乎不提供额外保护。
+- 建议使用至少 6 个真正随机、可以准确手写备份的单词。
+- 不要只记在脑中；助记词与 Passphrase 应分开存放。
+- 恢复测试必须同时使用完全相同的助记词、Passphrase、币种与派生路径。
+- 二次确认只能减少输入错误，不能判断口令强度或替你保存口令。
 
-2. **内置词表哈希（网页中显示）**: `187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae`
-   - **用途**：验证BIP39标准英文词表（2048个单词）的正确性
-   - **显示位置**：打开网页后自动显示在页面顶部
+## 安全设计
 
-✅ **这两个哈希值本来就不同，都是正确的！**
+- 助记词熵来自浏览器 `crypto.getRandomValues`，不使用 `Math.random`。
+- PBKDF2、HMAC-SHA512 和 SHA-256 使用浏览器原生 WebCrypto。
+- 内置标准 BIP39 英文词表，无外部词表加载。
+- CSP 禁止页面主动发起网络连接或加载外部资源。
+- 页面启动时运行 WebCrypto、词表及 BIP84 回归向量自检，失败时禁止生成。
+- 熵、种子、私钥和可变临时缓冲区在使用后尽力清零。
+- Passphrase 变化、关闭面板或点击“清除”会立即作废旧助记词和地址。
+- 打印样式会隐藏钱包内容，降低误触打印导致泄露的风险。
 
-**English:**
-This tool has **two different SHA-256 hashes** - please don't confuse them:
+## 明确的安全边界
 
-1. **HTML File Hash (shown above)**: `bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614`
-   - **Purpose**: Verify the entire HTML file hasn't been tampered with
-   - **How to verify**: Use system commands to calculate file hash (see below)
+- 页面内显示的 SHA-256 是“内置词表哈希”，不是整个 HTML 文件哈希。
+- 页面自检与被检代码位于同一文件，不能证明发布者身份，也不能抵御整个文件被恶意替换。
+- 清空 DOM 或 `Uint8Array` 不等于可靠擦除 JavaScript 字符串、浏览器进程内存、系统交换区、截图、摄像头记录或恶意扩展记录。
+- 当前地址派生包含项目内实现的 RIPEMD160、Bech32 和 secp256k1 逻辑；已通过独立向量交叉验证，但仍应使用第二款离线钱包验证结果。
+- 本工具不是硬件钱包，不能抵御已被控制的操作系统、浏览器或固件。
 
-2. **Embedded Wordlist Hash (shown in webpage)**: `187db04a869dd9bc7be80d21a86497d692c0db6abd3aa8cb6be5d618ff757fae`
-   - **Purpose**: Verify the BIP39 standard English wordlist (2048 words) is correct
-   - **Display location**: Automatically shown at the top of the page after loading
+## 文件完整性验证
 
-✅ **Both hashes are different and both are correct!**
-
----
-
-### 如何验证 | How to Verify
-
-#### 在 macOS / Linux 上：
+发布包包含 `SHA256SUMS`。在 macOS/Linux 中运行：
 
 ```bash
-# 进入文件所在目录
-cd /path/to/Bitcoin-Mnemonic-Offline-Generation-Tool--Beta-Version
-
-# 计算 SHA-256 哈希值
-shasum -a 256 Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html
-
-# 或使用
-sha256sum Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html
+shasum -a 256 -c SHA256SUMS
 ```
 
-#### 在 Windows 上：
+也可以单独计算主文件：
+
+```bash
+shasum -a 256 Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html
+```
+
+Windows PowerShell：
 
 ```powershell
-# 使用 PowerShell
-Get-FileHash Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html -Algorithm SHA256
-
-# 或使用 CertUtil
-CertUtil -hashfile Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE.html SHA256
+Get-FileHash Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html -Algorithm SHA256
 ```
 
-#### 在线工具（不推荐用于生产）：
+重要限制：同一下载包中的未签名哈希清单只能发现意外损坏，不能证明下载来源可信。正式发布时应通过可信渠道公布该哈希，最好再使用 Minisign 或 GPG 对 `SHA256SUMS` 签名。当前目录没有发布者私钥，因此不会伪造签名。
 
-⚠️ **注意：** 不要将生产环境使用的文件上传到在线哈希计算网站！仅用于学习测试。
+不要把 HTML、助记词或 Passphrase 上传到在线哈希、扫描或分析网站。
 
-### 验证步骤 | Verification Steps
+## 独立恢复验证
 
-1. ✅ 下载文件后，立即计算其 SHA-256 哈希值
-2. ✅ 将计算结果与上方提供的哈希值对比
-3. ✅ 确保完全一致（包括大小写）
-4. ✅ 仅在哈希值匹配后使用该文件
-5. ❌ 如果哈希值不匹配，**请勿使用**，并重新下载
+1. 用本工具生成一套只用于测试的新助记词及首地址。
+2. 保持断网，在另一款可信、支持 BIP39 Passphrase 与 BIP84 的钱包中恢复。
+3. 选择 Bitcoin 主网、Native SegWit、路径 `m/84'/0'/0'/0/0`。
+4. 确认首地址完全相同。
+5. 进行小额收款后，再从恢复的钱包发送出去。
 
-**示例输出：**
+不要为了验证而把已经持有真实资产的助记词输入普通浏览器页面。
+
+## 开发验证
+
+开发依赖不会被 HTML 加载，仅用于独立测试：
+
+```bash
+npm ci
+npm test
+npm audit
 ```
-✓ 正确：bf477e2e91adc98107ac97c667c42990936ecbffc0f247055a817c070b654614
-✗ 错误：任何不同的哈希值都意味着文件已被修改
-```
 
----
+测试覆盖空口令、`TREZOR`、中文/Emoji、Unicode NFKD 等价形式和保留首尾空格的 Passphrase。
 
-## ✅ 地址验证流程 | Address Verification Process
+## 主要文件
 
-**中文：**
-1. 使用本工具生成助记词并记录显示的 Bitcoin 地址
-2. 在另一个离线钱包中导入相同助记词（保持离线）
-3. 确认路径为 `m/84'/0'/0'/0/0` (BIP84)
-4. 对比两个钱包显示的地址是否完全一致
-5. 仅在验证无误后，先测试小额转账
+| 文件 | 用途 |
+|---|---|
+| `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html` | v5.1 推荐主程序 |
+| `SHA256SUMS` | 发布文件校验清单 |
+| `scripts/verify-vectors.js` | 独立 BIP39/BIP32/BIP84 测试 |
+| `package.json` / `package-lock.json` | 固定开发测试依赖 |
+| `CHANGELOG-v5.0-BIP39-Passphrase.md` | v5.0–v5.1 变更记录 |
 
-**English:**
-1. Generate mnemonic with this tool and note the displayed address
-2. Import same mnemonic in another offline wallet
-3. Verify the derivation path is `m/84'/0'/0'/0/0` (BIP84)
-4. Compare if addresses match exactly
-5. Test with small amount first after verification
+## 免责声明
 
----
-
-## ❓ 常见问题 | FAQ
-
-### Q1: 为什么打开文件后显示空白？
-**A:** 某些浏览器可能阻止了本地文件的执行。请尝试：
-- 使用 Chrome 或 Edge 浏览器
-- 通过本地服务器方式打开（见"方法二"）
-- 检查浏览器控制台是否有错误信息
-
-### Q2: 生成的地址安全吗？
-**A:** 只要您：
-- 在完全离线环境下使用
-- 使用可信的设备
-- 妥善保管助记词
-- 通过其他钱包交叉验证地址
-
-### Q3: 需要安装任何软件吗？
-**A:** 不需要。这是一个独立的 HTML 文件，只需浏览器即可运行。
-
-### Q4: 支持哪些浏览器？
-**A:** 支持现代浏览器：Chrome、Edge、Firefox、Safari（需支持 WebCrypto API）
-
----
-
-## ⚠️ 免责声明 | Disclaimer
-
-**中文：**
-本工具按"现状"提供，开发者不对因使用本工具造成的任何损失承担责任。用户需自行承担所有风险，包括但不限于：
-- 助记词丢失或被盗
-- 资金损失
-- 地址生成错误
-
-使用本工具即表示您同意：
-- 自行验证所有输出结果
-- 妥善保管助记词
-- 确保操作环境安全可靠
-- 先进行小额测试
-
-**English:**
-This tool is provided "AS IS" without warranty. The developer is not responsible for any loss incurred from using this tool. Users assume all risks including but not limited to:
-- Loss or theft of mnemonic phrases
-- Loss of funds
-- Address generation errors
-
-By using this tool, you agree to:
-- Verify all outputs independently
-- Securely store your mnemonic phrase
-- Ensure your environment is secure
-- Test with small amounts first
-
----
-
-## 📞 技术支持 | Support
-
-如有技术问题，请查看：
-For technical issues, please check:
-
-- 📖 [BIP39 标准文档](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)
-- 📖 [BIP84 标准文档](https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki)
-- 🔍 项目安全审计报告 | Security audit reports in this repository
-
----
-
-## 📄 开源协议 | License
-
-本项目遵循原始项目的开源协议。
-This project follows the license of the original project.
-
----
-
-**最后提醒 | Final Reminder:**
-
-🔒 **安全第一** | **Security First**
-- 务必离线使用 | Must use offline
-- 妥善保管助记词 | Keep mnemonic safe
-- 交叉验证地址 | Cross-verify addresses
-- 小额测试优先 | Test with small amounts first
-
-祝您使用愉快！ | Happy generating!
+本工具按现状提供，不替代硬件钱包或专业安全审计。使用者必须独立验证输出、妥善备份并承担使用风险。

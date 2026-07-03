@@ -3,12 +3,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <!-- 安全策略：禁止所有外部资源加载 - 增强版 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests;">
-<title>比特币助记词生成工具 - 安全加固版</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests;">
+<title>比特币助记词生成工具 v5.1 - Passphrase 安全加固版</title>
 
 <!--
     ============================================
-    ⚠️  安全增强版本 v3.0  ⚠️
+    ⚠️  安全增强版本 v5.1  ⚠️
     ============================================
 
     本版本已进行以下安全加固：
@@ -16,13 +16,13 @@
     2. ✅ 添加严格的 CSP 策略，禁止外部资源
     3. ✅ 使用系统字体，确保完全离线
     4. ✅ 减少调试信息输出
-    5. ✅ 页面卸载时自动清理敏感数据 (v2.0)
+    5. ✅ 页面卸载时尽力清理敏感数据 (v2.0)
     6. ✅ 增强型CSP防护策略 (v2.0)
        - connect-src 'none' - 禁止网络连接
        - object-src 'none' - 禁止插件加载
        - base-uri 'none' - 防止base标签注入
        - form-action 'none' - 禁止表单提交
-       - frame-ancestors 'none' - 防止被嵌入iframe
+       - 运行时顶层窗口检查 - 被嵌入 iframe 时立即停止
     7. ✅ 完全移除外部词表加载功能 (v3.0 NEW)
        - 删除自动加载本地文件功能
        - 删除手动上传词表功能
@@ -35,7 +35,7 @@
     - 生成助记词后请妥善保管
     - 不要截图或拍照
     - 使用完毕后清除浏览器缓存
-    - 关闭页面时会自动清理显示的敏感数据
+    - 关闭页面时会尽力清理页面中显示的敏感数据；浏览器内存无法保证彻底擦除
     - 仅使用内置的标准BIP39词表（已验证）
 
     ============================================
@@ -460,6 +460,10 @@ input[type="file"]:hover {
   align-items: center;
 }
 
+.passphrase-container + .passphrase-container {
+  margin-top: 0.75rem;
+}
+
 .passphrase-input {
   flex: 1;
   padding: 0.75rem 1rem;
@@ -495,6 +499,13 @@ input[type="file"]:hover {
   color: var(--warning);
 }
 
+.passphrase-validation {
+  display: none;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
 @media (max-width: 640px) {
   .passphrase-container {
     flex-direction: column;
@@ -504,6 +515,21 @@ input[type="file"]:hover {
   .passphrase-input,
   .btn-toggle-passphrase {
     width: 100%;
+  }
+}
+
+/* 防止误触打印将助记词写入打印预览、系统缓存或纸张 */
+@media print {
+  body > * {
+    display: none !important;
+  }
+
+  body::before {
+    display: block;
+    padding: 2rem;
+    color: #000;
+    background: #fff;
+    content: "为保护助记词，本离线钱包工具已禁用打印。";
   }
 }
 
@@ -1084,12 +1110,16 @@ a:hover {
 </div>
 
 <div class="passphrase-section" id="passphrase-section" style="display: none;">
-  <label for="passphrase-input">BIP39 Passphrase（第 25 个词 / 自定义口令，可选）</label>
+  <label for="passphrase-input">BIP39 Passphrase（自定义口令，可选）</label>
   <div class="passphrase-container">
-    <input type="password" id="passphrase-input" class="passphrase-input" placeholder="留空则等同于未启用 Passphrase" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <input type="password" id="passphrase-input" class="passphrase-input" placeholder="输入 Passphrase；留空则不启用" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" aria-describedby="passphrase-warning passphrase-validation">
     <button id="btn-toggle-passphrase" class="btn-toggle-passphrase" type="button">显示</button>
   </div>
-  <div class="passphrase-warning">⚠️ 请务必牢记此口令：它不属于助记词本身，也不会被保存或显示在助记词区域。同一助记词搭配不同口令会派生出完全不同的钱包地址；一旦遗忘该口令，对应资产将永久无法找回。关闭本面板会自动清空已输入的口令。</div>
+  <div class="passphrase-container">
+    <input type="password" id="passphrase-confirm" class="passphrase-input" placeholder="再次输入 Passphrase 进行确认" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" aria-describedby="passphrase-warning passphrase-validation">
+  </div>
+  <div class="passphrase-validation" id="passphrase-validation" role="alert">两次输入的 Passphrase 不一致，无法生成钱包。</div>
+  <div class="passphrase-warning" id="passphrase-warning">⚠️ 请逐字备份此口令：它不属于助记词，也无法找回。弱口令（姓名、日期、名言或短密码）几乎不增加保护；建议使用至少 6 个真正随机且可准确备份的单词。大小写、空格和字符必须完全一致。关闭本面板或点击“清除”会尽力清空口令及当前结果。</div>
 </div>
 
 <button id="btn-generate" disabled>生成助记词</button>
@@ -1293,6 +1323,12 @@ button:hover:not(:disabled):not(.theme-toggle) {
 
 <script type="text/javascript">
 (async()=>{
+if (window.top !== window.self) {
+  document.body.replaceChildren();
+  document.body.textContent = '安全错误：本工具禁止在 iframe 中运行。';
+  throw new Error('禁止在 iframe 中运行');
+}
+
 // 主题切换功能
 const themeToggle = document.getElementById("theme-toggle");
 const sunIcon = document.getElementById("sun-icon");
@@ -1373,6 +1409,8 @@ const btn24=document.getElementById("btn-24");
 const btnPassphrase=document.getElementById("btn-passphrase");
 const passphraseSection=document.getElementById("passphrase-section");
 const passphraseInput=document.getElementById("passphrase-input");
+const passphraseConfirm=document.getElementById("passphrase-confirm");
+const passphraseValidation=document.getElementById("passphrase-validation");
 const btnTogglePassphrase=document.getElementById("btn-toggle-passphrase");
 const addressSection=document.getElementById("address-section");
 const addressDerivationPassphrase=document.getElementById("address-derivation-passphrase");
@@ -1434,7 +1472,43 @@ function setGenerationControlsLocked(locked) {
   btn24.disabled = locked || wordCount === 24;
   btnPassphrase.disabled = locked;
   passphraseInput.disabled = locked;
+  passphraseConfirm.disabled = locked;
   btnTogglePassphrase.disabled = locked;
+}
+
+function clearGeneratedResult() {
+  generationId++;
+  mnemonicDiv.textContent = "";
+  btcAddressInput.value = "";
+  addressSection.style.display = "none";
+  addressDerivationPassphrase.textContent = "BIP39 Passphrase 为空";
+}
+
+function resetPassphraseFields() {
+  passphraseInput.value = "";
+  passphraseConfirm.value = "";
+  passphraseInput.type = "password";
+  passphraseConfirm.type = "password";
+  btnTogglePassphrase.textContent = "显示";
+  passphraseValidation.style.display = "none";
+  passphraseInput.removeAttribute("aria-invalid");
+  passphraseConfirm.removeAttribute("aria-invalid");
+}
+
+function updatePassphraseValidation() {
+  const matches = passphraseInput.value === passphraseConfirm.value;
+  const hasAnyInput = passphraseInput.value.length > 0 || passphraseConfirm.value.length > 0;
+  const invalid = hasAnyInput && !matches;
+  passphraseValidation.style.display = invalid ? "block" : "none";
+  passphraseInput.toggleAttribute("aria-invalid", invalid);
+  passphraseConfirm.toggleAttribute("aria-invalid", invalid);
+  btnGenerate.disabled = generationInProgress || invalid;
+  return !invalid;
+}
+
+function handlePassphraseInput() {
+  clearGeneratedResult();
+  updatePassphraseValidation();
 }
 
 btn12.addEventListener("click",()=>{
@@ -1458,18 +1532,24 @@ btnPassphrase.addEventListener("click", () => {
   if (willShow) {
     passphraseInput.focus();
   } else {
-    // 关闭面板时清空口令，避免"看似已关闭但仍在生效"的误导
-    passphraseInput.value = "";
-    passphraseInput.type = "password";
-    btnTogglePassphrase.textContent = "显示";
+    // 关闭面板时同时清空口令和旧结果，避免口令状态与地址不一致
+    resetPassphraseFields();
+    clearGeneratedResult();
+    updatePassphraseValidation();
   }
 });
 
 btnTogglePassphrase.addEventListener("click", () => {
   const showing = passphraseInput.type === "text";
   passphraseInput.type = showing ? "password" : "text";
+  passphraseConfirm.type = showing ? "password" : "text";
   btnTogglePassphrase.textContent = showing ? "显示" : "隐藏";
 });
+
+passphraseInput.addEventListener("input", handlePassphraseInput);
+passphraseConfirm.addEventListener("input", handlePassphraseInput);
+passphraseInput.addEventListener("change", handlePassphraseInput);
+passphraseConfirm.addEventListener("change", handlePassphraseInput);
 
 // 嵌入的 BIP39 标准英文词表（2048 个单词）
 const EMBEDDED_BIP39_WORDLIST = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','affair','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','bachelor','bacon','badge','bag','balance','balcony','ball','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','bonus','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brass','brave','bread','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz','cabbage','cabin','cable','cactus','cage','cake','call','calm','camera','camp','can','canal','cancel','candy','cannon','canoe','canvas','canyon','capable','capital','captain','car','carbon','card','cargo','carpet','carry','cart','case','cash','casino','castle','casual','cat','catalog','catch','category','cattle','caught','cause','caution','cave','ceiling','celery','cement','census','century','cereal','certain','chair','chalk','champion','change','chaos','chapter','charge','chase','chat','cheap','check','cheese','chef','cherry','chest','chicken','chief','child','chimney','choice','choose','chronic','chuckle','chunk','churn','cigar','cinnamon','circle','citizen','city','civil','claim','clap','clarify','claw','clay','clean','clerk','clever','click','client','cliff','climb','clinic','clip','clock','clog','close','cloth','cloud','clown','club','clump','cluster','clutch','coach','coast','coconut','code','coffee','coil','coin','collect','color','column','combine','come','comfort','comic','common','company','concert','conduct','confirm','congress','connect','consider','control','convince','cook','cool','copper','copy','coral','core','corn','correct','cost','cotton','couch','country','couple','course','cousin','cover','coyote','crack','cradle','craft','cram','crane','crash','crater','crawl','crazy','cream','credit','creek','crew','cricket','crime','crisp','critic','crop','cross','crouch','crowd','crucial','cruel','cruise','crumble','crunch','crush','cry','crystal','cube','culture','cup','cupboard','curious','current','curtain','curve','cushion','custom','cute','cycle','dad','damage','damp','dance','danger','daring','dash','daughter','dawn','day','deal','debate','debris','decade','december','decide','decline','decorate','decrease','deer','defense','define','defy','degree','delay','deliver','demand','demise','denial','dentist','deny','depart','depend','deposit','depth','deputy','derive','describe','desert','design','desk','despair','destroy','detail','detect','develop','device','devote','diagram','dial','diamond','diary','dice','diesel','diet','differ','digital','dignity','dilemma','dinner','dinosaur','direct','dirt','disagree','discover','disease','dish','dismiss','disorder','display','distance','divert','divide','divorce','dizzy','doctor','document','dog','doll','dolphin','domain','donate','donkey','donor','door','dose','double','dove','draft','dragon','drama','drastic','draw','dream','dress','drift','drill','drink','drip','drive','drop','drum','dry','duck','dumb','dune','during','dust','dutch','duty','dwarf','dynamic','eager','eagle','early','earn','earth','easily','east','easy','echo','ecology','economy','edge','edit','educate','effort','egg','eight','either','elbow','elder','electric','elegant','element','elephant','elevator','elite','else','embark','embody','embrace','emerge','emotion','employ','empower','empty','enable','enact','end','endless','endorse','enemy','energy','enforce','engage','engine','enhance','enjoy','enlist','enough','enrich','enroll','ensure','enter','entire','entry','envelope','episode','equal','equip','era','erase','erode','erosion','error','erupt','escape','essay','essence','estate','eternal','ethics','evidence','evil','evoke','evolve','exact','example','excess','exchange','excite','exclude','excuse','execute','exercise','exhaust','exhibit','exile','exist','exit','exotic','expand','expect','expire','explain','expose','express','extend','extra','eye','eyebrow','fabric','face','faculty','fade','faint','faith','fall','false','fame','family','famous','fan','fancy','fantasy','farm','fashion','fat','fatal','father','fatigue','fault','favorite','feature','february','federal','fee','feed','feel','female','fence','festival','fetch','fever','few','fiber','fiction','field','figure','file','film','filter','final','find','fine','finger','finish','fire','firm','first','fiscal','fish','fit','fitness','fix','flag','flame','flash','flat','flavor','flee','flight','flip','float','flock','floor','flower','fluid','flush','fly','foam','focus','fog','foil','fold','follow','food','foot','force','forest','forget','fork','fortune','forum','forward','fossil','foster','found','fox','fragile','frame','frequent','fresh','friend','fringe','frog','front','frost','frown','frozen','fruit','fuel','fun','funny','furnace','fury','future','gadget','gain','galaxy','gallery','game','gap','garage','garbage','garden','garlic','garment','gas','gasp','gate','gather','gauge','gaze','general','genius','genre','gentle','genuine','gesture','ghost','giant','gift','giggle','ginger','giraffe','girl','give','glad','glance','glare','glass','glide','glimpse','globe','gloom','glory','glove','glow','glue','goat','goddess','gold','good','goose','gorilla','gospel','gossip','govern','gown','grab','grace','grain','grant','grape','grass','gravity','great','green','grid','grief','grit','grocery','group','grow','grunt','guard','guess','guide','guilt','guitar','gun','gym','habit','hair','half','hammer','hamster','hand','happy','harbor','hard','harsh','harvest','hat','have','hawk','hazard','head','health','heart','heavy','hedgehog','height','hello','helmet','help','hen','hero','hidden','high','hill','hint','hip','hire','history','hobby','hockey','hold','hole','holiday','hollow','home','honey','hood','hope','horn','horror','horse','hospital','host','hotel','hour','hover','hub','huge','human','humble','humor','hundred','hungry','hunt','hurdle','hurry','hurt','husband','hybrid','ice','icon','idea','identify','idle','ignore','ill','illegal','illness','image','imitate','immense','immune','impact','impose','improve','impulse','inch','include','income','increase','index','indicate','indoor','industry','infant','inflict','inform','inhale','inherit','initial','inject','injury','inmate','inner','innocent','input','inquiry','insane','insect','inside','inspire','install','intact','interest','into','invest','invite','involve','iron','island','isolate','issue','item','ivory','jacket','jaguar','jar','jazz','jealous','jeans','jelly','jewel','job','join','joke','journey','joy','judge','juice','jump','jungle','junior','junk','just','kangaroo','keen','keep','ketchup','key','kick','kid','kidney','kind','kingdom','kiss','kit','kitchen','kite','kitten','kiwi','knee','knife','knock','know','lab','label','labor','ladder','lady','lake','lamp','language','laptop','large','later','latin','laugh','laundry','lava','law','lawn','lawsuit','layer','lazy','leader','leaf','learn','leave','lecture','left','leg','legal','legend','leisure','lemon','lend','length','lens','leopard','lesson','letter','level','liar','liberty','library','license','life','lift','light','like','limb','limit','link','lion','liquid','list','little','live','lizard','load','loan','lobster','local','lock','logic','lonely','long','loop','lottery','loud','lounge','love','loyal','lucky','luggage','lumber','lunar','lunch','luxury','lyrics','machine','mad','magic','magnet','maid','mail','main','major','make','mammal','man','manage','mandate','mango','mansion','manual','maple','marble','march','margin','marine','market','marriage','mask','mass','master','match','material','math','matrix','matter','maximum','maze','meadow','mean','measure','meat','mechanic','medal','media','melody','melt','member','memory','mention','menu','mercy','merge','merit','merry','mesh','message','metal','method','middle','midnight','milk','million','mimic','mind','minimum','minor','minute','miracle','mirror','misery','miss','mistake','mix','mixed','mixture','mobile','model','modify','mom','moment','monitor','monkey','monster','month','moon','moral','more','morning','mosquito','mother','motion','motor','mountain','mouse','move','movie','much','muffin','mule','multiply','muscle','museum','mushroom','music','must','mutual','myself','mystery','myth','naive','name','napkin','narrow','nasty','nation','nature','near','neck','need','negative','neglect','neither','nephew','nerve','nest','net','network','neutral','never','news','next','nice','night','noble','noise','nominee','noodle','normal','north','nose','notable','note','nothing','notice','novel','now','nuclear','number','nurse','nut','oak','obey','object','oblige','obscure','observe','obtain','obvious','occur','ocean','october','odor','off','offer','office','often','oil','okay','old','olive','olympic','omit','once','one','onion','online','only','open','opera','opinion','oppose','option','orange','orbit','orchard','order','ordinary','organ','orient','original','orphan','ostrich','other','outdoor','outer','output','outside','oval','oven','over','own','owner','oxygen','oyster','ozone','pact','paddle','page','pair','palace','palm','panda','panel','panic','panther','paper','parade','parent','park','parrot','party','pass','patch','path','patient','patrol','pattern','pause','pave','payment','peace','peanut','pear','peasant','pelican','pen','penalty','pencil','people','pepper','perfect','permit','person','pet','phone','photo','phrase','physical','piano','picnic','picture','piece','pig','pigeon','pill','pilot','pink','pioneer','pipe','pistol','pitch','pizza','place','planet','plastic','plate','play','please','pledge','pluck','plug','plunge','poem','poet','point','polar','pole','police','pond','pony','pool','popular','portion','position','possible','post','potato','pottery','poverty','powder','power','practice','praise','predict','prefer','prepare','present','pretty','prevent','price','pride','primary','print','priority','prison','private','prize','problem','process','produce','profit','program','project','promote','proof','property','prosper','protect','proud','provide','public','pudding','pull','pulp','pulse','pumpkin','punch','pupil','puppy','purchase','purity','purpose','purse','push','put','puzzle','pyramid','quality','quantum','quarter','question','quick','quit','quiz','quote','rabbit','raccoon','race','rack','radar','radio','rail','rain','raise','rally','ramp','ranch','random','range','rapid','rare','rate','rather','raven','raw','razor','ready','real','reason','rebel','rebuild','recall','receive','recipe','record','recycle','reduce','reflect','reform','refuse','region','regret','regular','reject','relax','release','relief','rely','remain','remember','remind','remove','render','renew','rent','reopen','repair','repeat','replace','report','require','rescue','resemble','resist','resource','response','result','retire','retreat','return','reunion','reveal','review','reward','rhythm','rib','ribbon','rice','rich','ride','ridge','rifle','right','rigid','ring','riot','ripple','risk','ritual','rival','river','road','roast','robot','robust','rocket','romance','roof','rookie','room','rose','rotate','rough','round','route','royal','rubber','rude','rug','rule','run','runway','rural','sad','saddle','sadness','safe','sail','salad','salmon','salon','salt','salute','same','sample','sand','satisfy','satoshi','sauce','sausage','save','say','scale','scan','scare','scatter','scene','scheme','school','science','scissors','scorpion','scout','scrap','screen','script','scrub','sea','search','season','seat','second','secret','section','security','seed','seek','segment','select','sell','seminar','senior','sense','sentence','series','service','session','settle','setup','seven','shadow','shaft','shallow','share','shed','shell','sheriff','shield','shift','shine','ship','shiver','shock','shoe','shoot','shop','short','shoulder','shove','shrimp','shrug','shuffle','shy','sibling','sick','side','siege','sight','sign','silent','silk','silly','silver','similar','simple','since','sing','siren','sister','situate','six','size','skate','sketch','ski','skill','skin','skirt','skull','slab','slam','sleep','slender','slice','slide','slight','slim','slogan','slot','slow','slush','small','smart','smile','smoke','smooth','snack','snake','snap','sniff','snow','soap','soccer','social','sock','soda','soft','solar','soldier','solid','solution','solve','someone','song','soon','sorry','sort','soul','sound','soup','source','south','space','spare','spatial','spawn','speak','special','speed','spell','spend','sphere','spice','spider','spike','spin','spirit','split','spoil','sponsor','spoon','sport','spot','spray','spread','spring','spy','square','squeeze','squirrel','stable','stadium','staff','stage','stairs','stamp','stand','start','state','stay','steak','steel','stem','step','stereo','stick','still','sting','stock','stomach','stone','stool','story','stove','strategy','street','strike','strong','struggle','student','stuff','stumble','style','subject','submit','subway','success','such','sudden','suffer','sugar','suggest','suit','summer','sun','sunny','sunset','super','supply','supreme','sure','surface','surge','surprise','surround','survey','suspect','sustain','swallow','swamp','swap','swarm','swear','sweet','swift','swim','swing','switch','sword','symbol','symptom','syrup','system','table','tackle','tag','tail','talent','talk','tank','tape','target','task','taste','tattoo','taxi','teach','team','tell','ten','tenant','tennis','tent','term','test','text','thank','that','theme','then','theory','there','they','thing','this','thought','three','thrive','throw','thumb','thunder','ticket','tide','tiger','tilt','timber','time','tiny','tip','tired','tissue','title','toast','tobacco','today','toddler','toe','together','toilet','token','tomato','tomorrow','tone','tongue','tonight','tool','tooth','top','topic','topple','torch','tornado','tortoise','toss','total','tourist','toward','tower','town','toy','track','trade','traffic','tragic','train','transfer','trap','trash','travel','tray','treat','tree','trend','trial','tribe','trick','trigger','trim','trip','trophy','trouble','truck','true','truly','trumpet','trust','truth','try','tube','tuition','tumble','tuna','tunnel','turkey','turn','turtle','twelve','twenty','twice','twin','twist','two','type','typical','ugly','umbrella','unable','unaware','uncle','uncover','under','undo','unfair','unfold','unhappy','uniform','unique','unit','universe','unknown','unlock','until','unusual','unveil','update','upgrade','uphold','upon','upper','upset','urban','urge','usage','use','used','useful','useless','usual','utility','vacant','vacuum','vague','valid','valley','valve','van','vanish','vapor','various','vast','vault','vehicle','velvet','vendor','venture','venue','verb','verify','version','very','vessel','veteran','viable','vibrant','vicious','victory','video','view','village','vintage','violin','virtual','virus','visa','visit','visual','vital','vivid','vocal','voice','void','volcano','volume','vote','voyage','wage','wagon','wait','walk','wall','walnut','want','warfare','warm','warrior','wash','wasp','waste','water','wave','way','wealth','weapon','wear','weasel','weather','web','wedding','weekend','weird','welcome','west','wet','whale','what','wheat','wheel','when','where','whip','whisper','wide','width','wife','wild','will','win','window','wine','wing','wink','winner','winter','wire','wisdom','wise','wish','witness','wolf','woman','wonder','wood','wool','word','work','world','worry','worth','wrap','wreck','wrestle','wrist','write','wrong','yard','year','yellow','you','young','youth','zebra','zero','zone','zoo'];
@@ -1714,8 +1794,14 @@ async function mnemonicToSeed(mnemonic, passphrase = '') {
   const mnemonicBytes = encoder.encode(normalizedMnemonic);
   const saltBytes = encoder.encode('mnemonic' + normalizedPassphrase);
 
-  // 4. PBKDF2-HMAC-SHA512: iterations=2048, output=64字节
-  return pbkdf2HmacSha512(mnemonicBytes, saltBytes, 2048, 64);
+  try {
+    // 4. PBKDF2-HMAC-SHA512: iterations=2048, output=64字节
+    return await pbkdf2HmacSha512(mnemonicBytes, saltBytes, 2048, 64);
+  } finally {
+    // JavaScript 字符串无法可靠擦除，但可尽力清零可变字节缓冲区。
+    mnemonicBytes.fill(0);
+    saltBytes.fill(0);
+  }
 }
 
 // 完整的RIPEMD160实现（包含双链并行处理）
@@ -2039,14 +2125,20 @@ async function deriveMasterKey(seed) {
   const I = await hmacSha512(new TextEncoder().encode('Bitcoin seed'), seed);
   const IL = I.slice(0, 32); // 左32字节
   const chainCode = I.slice(32);
-  
-  // BIP32合法性检查：IL必须 < n 且 != 0
-  const ILInt = BigInt('0x' + Array.from(IL).map(b => b.toString(16).padStart(2, '0')).join(''));
-  if (ILInt === 0n || ILInt >= secp256k1.n) {
-    throw new Error('BIP32主密钥无效：IL == 0 或 IL >= n（概率极低，约1/2^256）');
+
+  try {
+    // BIP32合法性检查：IL必须 < n 且 != 0
+    const ILInt = BigInt('0x' + Array.from(IL).map(b => b.toString(16).padStart(2, '0')).join(''));
+    if (ILInt === 0n || ILInt >= secp256k1.n) {
+      IL.fill(0);
+      chainCode.fill(0);
+      throw new Error('BIP32主密钥无效：IL == 0 或 IL >= n');
+    }
+
+    return { key: IL, chainCode };
+  } finally {
+    I.fill(0);
   }
-  
-  return { key: IL, chainCode };
 }
 
 // BIP32: 派生子密钥（如果派生失败会抛出错误，调用者应尝试下一个索引）
@@ -2059,58 +2151,63 @@ async function deriveChildKey(parentKey, parentChainCode, index, hardened = fals
   indexBuffer[3] = indexVal & 0xff;
   
   const data = new Uint8Array(37);
-  if (hardened) {
-    // 硬化派生：0x00 + 父私钥(32字节) + 索引(4字节)
-    data[0] = 0x00;
-    data.set(parentKey, 1);
-    data.set(indexBuffer, 33);
-  } else {
-    // 非硬化派生：压缩公钥(33字节) + 索引(4字节)
-    const publicKey = privateKeyToCompressedPublicKey(parentKey);
-    if (publicKey.length !== 33 || (publicKey[0] !== 0x02 && publicKey[0] !== 0x03)) {
-      throw new Error('BIP32 派生使用了无效压缩公钥');
+  let I = null;
+  let IL = null;
+  let childChainCode = null;
+  let actualKey = null;
+
+  try {
+    if (hardened) {
+      // 硬化派生：0x00 + 父私钥(32字节) + 索引(4字节)
+      data[0] = 0x00;
+      data.set(parentKey, 1);
+      data.set(indexBuffer, 33);
+    } else {
+      // 非硬化派生：压缩公钥(33字节) + 索引(4字节)
+      const publicKey = privateKeyToCompressedPublicKey(parentKey);
+      try {
+        if (publicKey.length !== 33 || (publicKey[0] !== 0x02 && publicKey[0] !== 0x03)) {
+          throw new Error('BIP32 派生使用了无效压缩公钥');
+        }
+        data.set(publicKey, 0);
+        data.set(indexBuffer, 33);
+      } finally {
+        publicKey.fill(0);
+      }
     }
-    data.set(publicKey, 0);
-    data.set(indexBuffer, 33);
+
+    I = await hmacSha512(parentChainCode, data);
+    IL = I.slice(0, 32); // 左32字节（BIP32称为IL）
+    childChainCode = I.slice(32);
+
+    const ILInt = BigInt('0x' + Array.from(IL).map(b => b.toString(16).padStart(2, '0')).join(''));
+    if (ILInt === 0n || ILInt >= secp256k1.n) {
+      throw new Error('派生出的私钥无效：IL == 0 或 IL >= n');
+    }
+
+    const parentKeyInt = BigInt('0x' + Array.from(parentKey).map(b => b.toString(16).padStart(2, '0')).join(''));
+    let actualKeyInt = (parentKeyInt + ILInt) % secp256k1.n;
+    if (actualKeyInt === 0n) {
+      throw new Error('派生出的私钥无效（结果为0）');
+    }
+
+    actualKey = new Uint8Array(32);
+    for (let i = 31; i >= 0; i--) {
+      actualKey[i] = Number(actualKeyInt & 0xffn);
+      actualKeyInt >>= 8n;
+    }
+
+    return { key: actualKey, chainCode: childChainCode };
+  } catch (error) {
+    if (actualKey) actualKey.fill(0);
+    if (childChainCode) childChainCode.fill(0);
+    throw error;
+  } finally {
+    indexBuffer.fill(0);
+    data.fill(0);
+    if (I) I.fill(0);
+    if (IL) IL.fill(0);
   }
-  
-  if (data.length !== 37) {
-    throw new Error('BIP32 HMAC 输入长度无效');
-  }
-  
-  const I = await hmacSha512(parentChainCode, data);
-  const IL = I.slice(0, 32); // 左32字节（BIP32称为IL）
-  const childChainCode = I.slice(32);
-  
-  // BIP32合法性检查：IL必须 < n 且 != 0
-  const ILInt = BigInt('0x' + Array.from(IL).map(b => b.toString(16).padStart(2, '0')).join(''));
-  if (ILInt === 0n || ILInt >= secp256k1.n) {
-    throw new Error('派生出的私钥无效：IL == 0 或 IL >= n（BIP32标准要求，应尝试下一个索引）');
-  }
-  
-  // 计算实际的子私钥（需要模n运算）
-  const parentKeyInt = BigInt('0x' + Array.from(parentKey).map(b => b.toString(16).padStart(2, '0')).join(''));
-  let actualKeyInt = (parentKeyInt + ILInt) % secp256k1.n;
-  
-  // 根据BIP32标准：最终结果必须 != 0（由于使用了模运算，actualKeyInt永远不会>=n）
-  // 如果结果为0，这是无效的（概率极低，约1/2^256），应尝试下一个索引
-  if (actualKeyInt === 0n) {
-    throw new Error('派生出的私钥无效（结果为0），这是BIP32标准要求，应尝试下一个索引');
-  }
-  
-  // 转换为字节数组（大端序）
-  const actualKey = new Uint8Array(32);
-  let val = actualKeyInt;
-  for (let i = 31; i >= 0; i--) {
-    actualKey[i] = Number(val & 0xffn);
-    val = val >> 8n;
-  }
-  
-  // 清零临时变量（安全措施）
-  // 注意：这里不清零 parentKey，因为它是外部传入的参数
-  // IL 是临时计算值，会在返回后被覆盖
-  
-  return { key: actualKey, chainCode: childChainCode };
 }
 
 // BIP84: 派生路径 m/84'/0'/0'/0/0 (Native SegWit P2WPKH)
@@ -2237,6 +2334,21 @@ async function validateLocalImplementation() {
       mnemonic: 'blush seven tuition lion aim point agent since illness autumn ritual tornado',
       passphrase: '',
       expected: 'bc1q7g4ur8vm9erfce7quqseef5lhyy7tl2hzr88ql'
+    },
+    {
+      mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+      passphrase: 'TREZOR',
+      expected: 'bc1qv5rmq0kt9yz3pm36wvzct7p3x6mtgehjul0feu'
+    },
+    {
+      mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+      passphrase: '密码🔐',
+      expected: 'bc1qgxux7v4mtqx53vm84a2dths4n629d5t3vapwl7'
+    },
+    {
+      mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+      passphrase: 'é',
+      expected: 'bc1q008nr6ajetlytrxzju9mrms4895a94q5575cdv'
     }
   ];
 
@@ -2420,6 +2532,9 @@ btnGenerate.addEventListener("click",async()=>{
     try {
       // 传递助记词和 BIP39 Passphrase（若面板已关闭或未填写则为空字符串），生成P2WPKH格式的首个收款地址
       const passphrase = passphraseInput.value;
+      if (passphrase !== passphraseConfirm.value) {
+        throw new Error('两次输入的 BIP39 Passphrase 不一致');
+      }
       const address = await generateBitcoinAddress(mnemonic, passphrase);
       const verificationAddress = await generateBitcoinAddress(mnemonic, passphrase);
       if (address !== verificationAddress) {
@@ -2461,11 +2576,9 @@ btnGenerate.addEventListener("click",async()=>{
 });
 
 btnClear.addEventListener("click",()=>{
-  generationId++;
-  mnemonicDiv.textContent="";
-  btcAddressInput.value = "";
-  addressSection.style.display = 'none';
-  addressDerivationPassphrase.textContent = "BIP39 Passphrase 为空";
+  clearGeneratedResult();
+  resetPassphraseFields();
+  updatePassphraseValidation();
 
   // 添加清除动画
   mnemonicDiv.classList.add('cleared');
@@ -2513,8 +2626,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('loaded');
 });
 
-// ========== 安全增强：页面卸载时清理敏感数据 ==========
-// 当用户关闭标签页或浏览器时，自动清理可能包含敏感信息的DOM元素
+// ========== 安全增强：页面卸载时尽力清理敏感数据 ==========
+// 这里只能清空 DOM；JavaScript 字符串、浏览器进程内存和系统交换区无法保证彻底擦除。
 function cleanupSensitiveData() {
   try {
     // 清理助记词显示区域
@@ -2537,6 +2650,11 @@ function cleanupSensitiveData() {
     const passphraseField = document.getElementById('passphrase-input');
     if (passphraseField) {
       passphraseField.value = '';
+    }
+
+    const passphraseConfirmField = document.getElementById('passphrase-confirm');
+    if (passphraseConfirmField) {
+      passphraseConfirmField.value = '';
     }
 
   } catch (error) {
