@@ -1,4 +1,4 @@
-# Bitcoin 助记词离线生成工具 v5.1
+# Bitcoin 助记词离线生成工具 v5.3
 
 用于在完全离线环境中生成 BIP39 英文助记词，并派生 Bitcoin 主网 BIP84 Native SegWit 首地址。
 
@@ -19,6 +19,8 @@ Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html
 - 派生路径 `m/84'/0'/0'/0/0`
 - 12 或 24 个 BIP39 英文单词
 - 可选 BIP39 Passphrase
+- 可选"补充熵"（高级）：与安全随机数逐字节异或，作为纵深防御
+- 生成后可选的"备份核对"抽查，帮助发现抄写错误
 
 ## 使用方法
 
@@ -26,11 +28,12 @@ Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html
 2. 物理断开网络，包括 Wi-Fi、网线、蓝牙共享和蜂窝网络。
 3. 校验 `SHA256SUMS`。
 4. 双击打开推荐的 HTML 文件。
-5. 选择 12 或 24 词；如启用 Passphrase，必须在两个输入框中逐字输入一致。
+5. 选择 12 或 24 词；如启用 Passphrase，必须在两个输入框中逐字输入一致。切换词数会作废已生成的旧结果。
 6. 手写备份助记词和 Passphrase，不要截图、拍照、打印或保存到云端。
-7. 在另一款可信离线钱包中恢复，并核对首地址和路径。
-8. 首次使用只进行小额收款与发送测试。
-9. 完成后点击“清除”，关闭整个浏览器；该操作只能尽力减少残留，不能保证擦除浏览器内存或系统交换区。
+7. 生成后可以使用页面提供的"备份核对"抽查：按提示回填对应位置的单词，确认抄写无误后再离开页面。核对通过与否都不影响已生成的助记词和地址，只是一次辅助检查。
+8. 在另一款可信离线钱包中恢复，并核对首地址和路径。
+9. 首次使用只进行小额收款与发送测试。
+10. 完成后点击“清除”，关闭整个浏览器；该操作只能尽力减少残留，不能保证擦除浏览器内存或系统交换区。
 
 ### 本地文件无法运行时
 
@@ -69,6 +72,8 @@ BIP39 Passphrase 不是助记词的一部分，没有“找回”功能。任何
 - 熵、种子、私钥和可变临时缓冲区在使用后尽力清零。
 - Passphrase 变化、关闭面板或点击“清除”会立即作废旧助记词和地址。
 - 打印样式会隐藏钱包内容，降低误触打印导致泄露的风险。
+- 可选的"补充熵"输入只会与安全随机数逐字节异或，异或的性质保证结果不会比单独使用安全随机数更弱；留空或输入可预测内容都不会降低安全性，也不能替代安全随机数单独使用。
+- 备份核对抽查的位置选择基于 `crypto.getRandomValues` 的无偏拒绝采样，不使用 `Math.random`；核对框内容会被"清除"按钮和页面卸载清理一并清空。
 
 ## 明确的安全边界
 
@@ -128,11 +133,11 @@ npm audit
 
 | 文件 | 用途 |
 |---|---|
-| `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html` | v5.1 推荐主程序 |
+| `Bitcoin-Mnemonic-Offline-Generation-Tool-SECURE-Passphrase.html` | v5.3 推荐主程序 |
 | `SHA256SUMS` | 发布文件校验清单 |
 | `scripts/verify-vectors.js` | 独立 BIP39/BIP32/BIP84 测试 |
 | `package.json` / `package-lock.json` | 固定开发测试依赖 |
-| `CHANGELOG-v5.0-BIP39-Passphrase.md` | v5.0–v5.1 变更记录 |
+| `CHANGELOG-v5.0-BIP39-Passphrase.md` | v5.0–v5.3 变更记录 |
 
 ## 免责声明
 

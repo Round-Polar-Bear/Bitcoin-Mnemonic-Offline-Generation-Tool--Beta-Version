@@ -19,7 +19,16 @@ const required = [
   ["input invalidates generated result", /function handlePassphraseInput\(\)[\s\S]*?clearGeneratedResult\(\)/],
   ["clear resets passphrase fields", /btnClear\.addEventListener[\s\S]*?resetPassphraseFields\(\)/],
   ["pagehide cleanup", /addEventListener\('pagehide',\s*cleanupSensitiveData\)/],
-  ["print protection", /@media print[\s\S]*?body\s*>\s*\*/]
+  ["print protection", /@media print[\s\S]*?body\s*>\s*\*/],
+  ["mnemonic cards use a direct-child selector", /#mnemonic\s*>\s*\.mnemonic-word/],
+  ["mnemonic word class", /wordSpan\.className\s*=\s*'mnemonic-word'/],
+  ["mnemonic index class", /indexLabel\.className\s*=\s*'word-index'/],
+  ["mnemonic text class", /wordLabel\.className\s*=\s*'word-text'/],
+  ["init gate flag exists", /let securityChecksPassed\s*=\s*false/],
+  ["passphrase validation respects init gate", /btnGenerate\.disabled\s*=\s*!securityChecksPassed\s*\|\|\s*generationInProgress\s*\|\|\s*invalid/],
+  ["controls unlock respects init gate", /btnGenerate\.disabled\s*=\s*locked\s*\|\|\s*!securityChecksPassed/],
+  ["generate entry checks init gate", /if\s*\(!securityChecksPassed\)\s*\{\s*alert/],
+  ["wordlist hash verified before population", /if\s*\(hashHex !== expectedHash\)\s*\{[\s\S]{0,200}?\}\s*[\s\S]{0,100}?WORDLIST\.push\(\.\.\.EMBEDDED_BIP39_WORDLIST\)/]
 ];
 
 for (const [name, pattern] of required) {
@@ -36,7 +45,8 @@ const forbiddenHtml = [
   ["XMLHttpRequest", /\bXMLHttpRequest\b/],
   ["WebSocket", /\bWebSocket\b/],
   ["sendBeacon", /\bsendBeacon\b/],
-  ["Math.random", /Math\.random\s*\(/]
+  ["Math.random", /Math\.random\s*\(/],
+  ["broad mnemonic span selector", /#mnemonic\s+span\s*(?:\{|:)/]
 ];
 
 for (const [name, pattern] of forbiddenHtml) {

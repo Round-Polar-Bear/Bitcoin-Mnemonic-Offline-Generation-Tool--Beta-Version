@@ -4,11 +4,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <!-- 安全策略：禁止所有外部资源加载 - 增强版 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests;">
-<title>比特币助记词生成工具 v5.1 - Passphrase 安全加固版</title>
+<title>比特币助记词生成工具 v5.3 - Passphrase 安全加固版</title>
 
 <!--
     ============================================
-    ⚠️  安全增强版本 v5.1  ⚠️
+    ⚠️  安全增强版本 v5.3  ⚠️
     ============================================
 
     本版本已进行以下安全加固：
@@ -28,6 +28,15 @@
        - 删除手动上传词表功能
        - 消除恶意词表注入风险
        - 仅使用内置标准BIP39词表
+    8. ✅ 体验与纵深防御加固 (v5.2 NEW)
+       - 修复 Passphrase 不一致提示未显示警示色的问题
+       - 切换 12/24 词会立即作废旧助记词/地址，避免状态不一致
+       - 助记词逐词编号，降低抄写漏词/错序概率
+       - 新增可选的"备份核对"抽查（不影响已生成结果）
+       - 新增可选的"补充熵"（与安全随机数异或，仅作纵深防御）
+    9. ✅ 自检失败硬闸门 (v5.3 NEW)
+       - 词表哈希先校验后写入，篡改词表不再进入内存
+       - securityChecksPassed 门闩：自检未通过时任何路径都无法启用生成按钮
 
     ⚠️  重要提醒  ⚠️
     - 请务必在完全离线环境中使用
@@ -74,7 +83,9 @@
   --warning-bg: rgba(255, 90, 31, 0.1);
   --warning-border: #ff5a1f;
   --success: #0e9f6e;
-  
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+
   --card-bg: #ffffff;
   --card-border: #E5E7EB;
   --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -120,7 +131,9 @@
   --warning-bg: rgba(255, 90, 31, 0.2);
   --warning-border: #ff5a1f;
   --success: #48bb78;
-  
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.15);
+
   --card-bg: #1a202c;
   --card-border: #4a5568;
   --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -454,6 +467,54 @@ input[type="file"]:hover {
   animation: fadeIn 0.3s ease-out;
 }
 
+#btn-extra-entropy.active {
+  background: var(--secondary);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.15);
+}
+
+.extra-entropy-section {
+  margin: 0 0 1.5rem;
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.extra-entropy-section label {
+  margin-bottom: 0.5rem;
+}
+
+.extra-entropy-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-family: monospace, monospace;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  outline: none;
+  resize: vertical;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.extra-entropy-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+.extra-entropy-warning {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--warning);
+}
+
 .passphrase-container {
   display: flex;
   gap: 0.75rem;
@@ -503,6 +564,7 @@ input[type="file"]:hover {
   display: none;
   margin-top: 0.5rem;
   font-size: 0.85rem;
+  font-weight: 600;
   color: var(--danger);
 }
 
@@ -631,7 +693,7 @@ button:disabled:hover {
 
 /* 桌面端：每行4个单词 */
 @media (min-width: 769px) {
-  #mnemonic span {
+  #mnemonic > .mnemonic-word {
     flex: 0 0 calc(25% - 1.125rem); /* 每行4个，减去3个gap的平均值 */
     max-width: calc(25% - 1.125rem);
   }
@@ -644,7 +706,7 @@ button:disabled:hover {
     padding: 2.5rem;
   }
   
-  #mnemonic span {
+  #mnemonic > .mnemonic-word {
     flex: 0 0 calc(25% - 1.5rem); /* 每行4个，减去3个gap的平均值 */
     max-width: calc(25% - 1.5rem);
     font-size: 1.6rem;
@@ -652,9 +714,13 @@ button:disabled:hover {
   }
 }
 
-#mnemonic span {
-  display: inline-block;
-  padding: 1rem 1.6rem;
+#mnemonic > .mnemonic-word {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.7rem;
+  min-height: 4.75rem;
+  padding: 1rem 1.35rem;
   margin: 0;
   background: linear-gradient(to right, rgba(247, 147, 26, 0.7), rgba(255, 184, 77, 0.7));
   border-radius: 0.6rem;
@@ -670,10 +736,35 @@ button:disabled:hover {
   cursor: default;
   white-space: nowrap;
   box-sizing: border-box;
-  text-align: center;
+  text-align: left;
 }
 
-#mnemonic span:hover {
+#mnemonic > .mnemonic-word .word-index {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: inherit;
+  font-size: 0.68em;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  text-align: right;
+  opacity: 0.78;
+  font-variant-numeric: tabular-nums;
+}
+
+#mnemonic > .mnemonic-word .word-text {
+  display: block;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+#mnemonic > .mnemonic-word:hover {
   background: linear-gradient(to right, rgba(230, 133, 23, 0.7), rgba(230, 133, 23, 0.7));
   color: #ffffff;
   transform: translateY(-2px);
@@ -778,7 +869,7 @@ a:hover {
     gap: 1.2rem;
   }
   
-  #mnemonic span {
+  #mnemonic > .mnemonic-word {
     font-size: 1.4rem;
     padding: 0.9rem 1.5rem;
     flex: 0 0 calc(25% - 0.9rem);
@@ -923,9 +1014,12 @@ a:hover {
     min-height: 4rem;
   }
   
-  #mnemonic span {
+  #mnemonic > .mnemonic-word {
     padding: 0.8rem 1.3rem;
     font-size: 1.25rem;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    column-gap: 0.5rem;
+    min-height: 4rem;
     flex: 0 0 calc(50% - 0.5rem); /* 移动端每行2个 */
     max-width: calc(50% - 0.5rem);
   }
@@ -1000,11 +1094,14 @@ a:hover {
     line-height: 1.5;
   }
   
-  #mnemonic span {
-    padding: 0.75rem 1.2rem;
-    font-size: 1.15rem;
-    flex: 0 0 calc(50% - 0.4rem); /* 小屏手机每行2个 */
-    max-width: calc(50% - 0.4rem);
+  #mnemonic > .mnemonic-word {
+    padding: 0.7rem 0.75rem;
+    font-size: 1.05rem;
+    grid-template-columns: 1.4rem minmax(0, 1fr);
+    column-gap: 0.4rem;
+    min-height: 3.5rem;
+    flex: 0 0 calc(50% - 0.5rem); /* 两张卡加1rem间距，刚好占满一行 */
+    max-width: calc(50% - 0.5rem);
   }
   
   .theme-toggle {
@@ -1057,7 +1154,7 @@ a:hover {
     gap: 2.5rem;
   }
   
-  #mnemonic span {
+  #mnemonic > .mnemonic-word {
     font-size: 1.8rem;
     padding: 1.4rem 2rem;
     flex: 0 0 calc(25% - 1.875rem); /* 每行4个，减去3个gap的平均值 */
@@ -1107,6 +1204,13 @@ a:hover {
 <button id="btn-12">12 词</button>
 <button id="btn-24">24 词</button>
 <button id="btn-passphrase" type="button" aria-pressed="false">BIP39 Passphrase</button>
+<button id="btn-extra-entropy" type="button" aria-pressed="false">补充熵（高级，可选）</button>
+</div>
+
+<div class="extra-entropy-section" id="extra-entropy-section" style="display: none;">
+  <label for="extra-entropy-input">补充熵输入（可选，例如掷骰子结果或随手敲击的字符）</label>
+  <textarea id="extra-entropy-input" class="extra-entropy-input" rows="2" placeholder="留空则仅使用浏览器安全随机数生成助记词" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-describedby="extra-entropy-warning"></textarea>
+  <div class="extra-entropy-warning" id="extra-entropy-warning">⚠️ 这不是随机源的替代品：助记词安全性始终由浏览器安全随机数保证，这里填写的内容只会与安全随机数逐字节异或后混合，不会降低安全性，留空或填弱内容也不会削弱结果。只有当你担心浏览器随机数生成器本身被后门污染时，才需要认真使用真正的物理随机来源（如实际掷骰子）填写此项作为纵深防御。</div>
 </div>
 
 <div class="passphrase-section" id="passphrase-section" style="display: none;">
@@ -1138,6 +1242,23 @@ a:hover {
     <input type="text" id="btc-address" class="address-input" readonly placeholder="生成助记词后自动计算地址">
     <button id="btn-copy-address" class="btn-copy-address">复制</button>
   </div>
+</div>
+
+<div class="backup-check-section" id="backup-check-section" style="display: none;">
+  <div class="backup-check-label">备份核对（可选，不影响已生成的结果）</div>
+  <div class="backup-check-hint" id="backup-check-hint">请对照你手写的备份，填写下列两个位置对应的单词，检查抄写是否正确：</div>
+  <div class="backup-check-container">
+    <div class="backup-check-item">
+      <label id="backup-check-label-1" for="backup-check-input-1"></label>
+      <input type="text" id="backup-check-input-1" class="backup-check-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-describedby="backup-check-hint backup-check-result">
+    </div>
+    <div class="backup-check-item">
+      <label id="backup-check-label-2" for="backup-check-input-2"></label>
+      <input type="text" id="backup-check-input-2" class="backup-check-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-describedby="backup-check-hint backup-check-result">
+    </div>
+    <button id="btn-verify-backup" type="button">核对</button>
+  </div>
+  <div class="backup-check-result" id="backup-check-result" role="status"></div>
 </div>
 </main>
 
@@ -1313,9 +1434,104 @@ button:hover:not(:disabled):not(.theme-toggle) {
   .address-container {
     flex-direction: column;
   }
-  
+
   .address-input,
   .btn-copy-address {
+    width: 100%;
+  }
+}
+
+/* 备份核对区域 */
+.backup-check-section {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+}
+
+.backup-check-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.backup-check-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.backup-check-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.backup-check-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.backup-check-item label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.backup-check-input {
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  font-family: monospace, monospace;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  box-sizing: border-box;
+  width: 140px;
+}
+
+.backup-check-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+#btn-verify-backup {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.backup-check-result {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-height: 1.2em;
+}
+
+.backup-check-result.backup-check-ok {
+  color: var(--success);
+}
+
+.backup-check-result.backup-check-fail {
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .backup-check-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backup-check-input,
+  #btn-verify-backup {
     width: 100%;
   }
 }
@@ -1412,13 +1628,26 @@ const passphraseInput=document.getElementById("passphrase-input");
 const passphraseConfirm=document.getElementById("passphrase-confirm");
 const passphraseValidation=document.getElementById("passphrase-validation");
 const btnTogglePassphrase=document.getElementById("btn-toggle-passphrase");
+const btnExtraEntropy=document.getElementById("btn-extra-entropy");
+const extraEntropySection=document.getElementById("extra-entropy-section");
+const extraEntropyInput=document.getElementById("extra-entropy-input");
 const addressSection=document.getElementById("address-section");
 const addressDerivationPassphrase=document.getElementById("address-derivation-passphrase");
 const btcAddressInput=document.getElementById("btc-address");
 const btnCopyAddress=document.getElementById("btn-copy-address");
+const backupCheckSection=document.getElementById("backup-check-section");
+const backupCheckLabel1=document.getElementById("backup-check-label-1");
+const backupCheckLabel2=document.getElementById("backup-check-label-2");
+const backupCheckInput1=document.getElementById("backup-check-input-1");
+const backupCheckInput2=document.getElementById("backup-check-input-2");
+const btnVerifyBackup=document.getElementById("btn-verify-backup");
+const backupCheckResult=document.getElementById("backup-check-result");
+let backupCheckExpected=null;
 let wordCount=12;
 let generationId=0;
 let generationInProgress=false;
+// 启动安全自检（WebCrypto/词表/地址向量）全部通过前，任何路径都不得启用生成按钮
+let securityChecksPassed=false;
 btn12.disabled=true;
 
 // 添加按钮点击波纹效果
@@ -1465,7 +1694,7 @@ function hideLoading(element) {
 
 function setGenerationControlsLocked(locked) {
   generationInProgress = locked;
-  btnGenerate.disabled = locked;
+  btnGenerate.disabled = locked || !securityChecksPassed;
   btnClear.disabled = locked;
   btnCopyAddress.disabled = locked;
   btn12.disabled = locked || wordCount === 12;
@@ -1474,6 +1703,20 @@ function setGenerationControlsLocked(locked) {
   passphraseInput.disabled = locked;
   passphraseConfirm.disabled = locked;
   btnTogglePassphrase.disabled = locked;
+  btnVerifyBackup.disabled = locked;
+  backupCheckInput1.disabled = locked;
+  backupCheckInput2.disabled = locked;
+  btnExtraEntropy.disabled = locked;
+  extraEntropyInput.disabled = locked;
+}
+
+function resetBackupCheck() {
+  backupCheckExpected = null;
+  backupCheckSection.style.display = "none";
+  backupCheckInput1.value = "";
+  backupCheckInput2.value = "";
+  backupCheckResult.textContent = "";
+  backupCheckResult.className = "backup-check-result";
 }
 
 function clearGeneratedResult() {
@@ -1482,6 +1725,7 @@ function clearGeneratedResult() {
   btcAddressInput.value = "";
   addressSection.style.display = "none";
   addressDerivationPassphrase.textContent = "BIP39 Passphrase 为空";
+  resetBackupCheck();
 }
 
 function resetPassphraseFields() {
@@ -1502,7 +1746,8 @@ function updatePassphraseValidation() {
   passphraseValidation.style.display = invalid ? "block" : "none";
   passphraseInput.toggleAttribute("aria-invalid", invalid);
   passphraseConfirm.toggleAttribute("aria-invalid", invalid);
-  btnGenerate.disabled = generationInProgress || invalid;
+  // 必须叠加 securityChecksPassed：否则自检失败后，输入口令会把生成按钮重新启用
+  btnGenerate.disabled = !securityChecksPassed || generationInProgress || invalid;
   return !invalid;
 }
 
@@ -1515,12 +1760,15 @@ btn12.addEventListener("click",()=>{
   wordCount=12;
   btn12.disabled=true;
   btn24.disabled=false;
+  // 词数会改变熵长度和生成结果，切换后必须作废旧助记词/地址，避免按钮状态与屏幕内容不一致
+  clearGeneratedResult();
 });
 
 btn24.addEventListener("click",()=>{
   wordCount=24;
   btn12.disabled=false;
   btn24.disabled=true;
+  clearGeneratedResult();
 });
 
 // BIP39 Passphrase（第25个词）面板开关
@@ -1536,6 +1784,20 @@ btnPassphrase.addEventListener("click", () => {
     resetPassphraseFields();
     clearGeneratedResult();
     updatePassphraseValidation();
+  }
+});
+
+// 补充熵（高级，可选）面板开关
+btnExtraEntropy.addEventListener("click", () => {
+  const willShow = extraEntropySection.style.display === "none" || !extraEntropySection.style.display;
+  extraEntropySection.style.display = willShow ? "block" : "none";
+  btnExtraEntropy.classList.toggle("active", willShow);
+  btnExtraEntropy.setAttribute("aria-pressed", String(willShow));
+  if (willShow) {
+    extraEntropyInput.focus();
+  } else {
+    // 补充熵只在点击"生成"时被消费一次，关闭面板时清空即可，无需作废已生成的结果
+    extraEntropyInput.value = "";
   }
 });
 
@@ -1757,6 +2019,76 @@ function generateEntropy(bytes) {
   cryptoObj.getRandomValues(arr);
 
   return arr;
+}
+
+// 无偏随机整数 [0, maxExclusive)：基于 crypto.getRandomValues 拒绝采样，避免 Math.random 和取模偏差
+// 仅用于非密钥用途（备份核对抽查的位置选择），不参与熵/私钥生成
+function secureRandomInt(maxExclusive) {
+  if (!Number.isInteger(maxExclusive) || maxExclusive <= 0) {
+    throw new Error('secureRandomInt: maxExclusive 必须为正整数');
+  }
+  if (!cryptoObj || typeof cryptoObj.getRandomValues !== 'function') {
+    throw new Error('当前环境不支持安全随机数生成');
+  }
+
+  const bytesNeeded = Math.max(1, Math.ceil(Math.log2(maxExclusive) / 8));
+  const range = 256 ** bytesNeeded;
+  const maxValid = range - (range % maxExclusive);
+  const buf = new Uint8Array(bytesNeeded);
+
+  while (true) {
+    cryptoObj.getRandomValues(buf);
+    let value = 0;
+    for (const b of buf) value = value * 256 + b;
+    if (value < maxValid) return value % maxExclusive;
+  }
+}
+
+// 从 [0, count) 中选取两个不重复的位置，用于助记词备份抽查
+function pickTwoDistinctIndices(count) {
+  if (count < 2) throw new Error('pickTwoDistinctIndices: count 必须至少为2');
+  const first = secureRandomInt(count);
+  let second = secureRandomInt(count - 1);
+  if (second >= first) second += 1;
+  return [first, second].sort((a, b) => a - b);
+}
+
+// 将任意长度的补充熵文本扩展为指定字节长度的掩码（重复 SHA-256，类似计数器模式 XOF）
+// 用途：与 crypto.getRandomValues 生成的熵逐字节异或，作为纵深防御。
+// 异或的性质保证：只要其中一路是均匀随机的，结果就是均匀随机的——即使这里填写的内容
+// 完全可预测（甚至为空），也不会削弱安全性，绝不能作为唯一随机源单独使用。
+async function deriveSupplementalEntropyMask(text, length) {
+  if (!text) return null;
+
+  const textBytes = new TextEncoder().encode(text);
+  const mask = new Uint8Array(length);
+  let offset = 0;
+  let counter = 0;
+
+  try {
+    while (offset < length) {
+      const counterBytes = new Uint8Array(4);
+      counterBytes[0] = (counter >>> 24) & 0xff;
+      counterBytes[1] = (counter >>> 16) & 0xff;
+      counterBytes[2] = (counter >>> 8) & 0xff;
+      counterBytes[3] = counter & 0xff;
+
+      const combined = new Uint8Array(textBytes.length + 4);
+      combined.set(textBytes, 0);
+      combined.set(counterBytes, textBytes.length);
+
+      const block = await sha256Bytes(combined);
+      const chunkLen = Math.min(block.length, length - offset);
+      mask.set(block.subarray(0, chunkLen), offset);
+      offset += chunkLen;
+      counter++;
+      block.fill(0);
+      combined.fill(0);
+    }
+    return mask;
+  } finally {
+    textBytes.fill(0);
+  }
 }
 
 // ========== 完整的比特币地址生成实现（标准兼容）==========
@@ -2052,11 +2384,9 @@ function pointAdd(p1, p2) {
       const y3 = (s * (x1 - x3) - y1) % secp256k1.p;
       return [mod(x3, secp256k1.p), mod(y3, secp256k1.p)];
     }
-    // 一般加法：如果x1==x2且y1==-y2 (mod p)，则返回无穷远点
-    if ((y1 + y2) % secp256k1.p === 0n) {
-      return null; // 无穷远点
-    }
-    return null; // 无穷远点（这种情况不应该发生，因为x1==x2且y1!=y2且y1!=-y2是不可能的）
+    // x1==x2 且 y1!=y2：素数域上的短Weierstrass曲线中，同一x坐标至多对应两个互为相反数的y值，
+    // 因此只要x相同而y不同，必然是 P + (-P)，结果为无穷远点
+    return null;
   }
   
   const s = (y2 - y1) * modInverse(x2 - x1, secp256k1.p) % secp256k1.p;
@@ -2066,6 +2396,8 @@ function pointAdd(p1, p2) {
 }
 
 // 标量乘法（二进制快速算法，迭代版本避免栈溢出）
+// 注意：这是非恒定时间实现（循环/分支耗时随k的比特模式变化），对需要抵御远程计时侧信道的
+// 签名服务不适用；但本工具仅在本地一次性生成钱包，不存在可测量执行时间的远程攻击者，故可接受。
 function scalarMult(k, point) {
   if (k === 0n || !point) return null;
   if (k === 1n) return point;
@@ -2395,9 +2727,9 @@ async function initEmbeddedWordlist() {
     throw new Error("嵌入的词表长度不正确");
   }
   
-  WORDLIST.push(...EMBEDDED_BIP39_WORDLIST);
-  
   // 计算嵌入词表的 SHA256（转换为标准格式：每行一个单词）
+  // 必须先校验哈希、后写入 WORDLIST：若先写入，哈希失败抛错后 WORDLIST 仍持有
+  // 2048 个被篡改的单词，能通过生成入口的 length===2048 守卫
   const text = EMBEDDED_BIP39_WORDLIST.join('\n');
   const encoder = new TextEncoder();
   const buf = encoder.encode(text);
@@ -2406,7 +2738,10 @@ async function initEmbeddedWordlist() {
   if (hashHex !== expectedHash) {
     throw new Error('嵌入的 BIP39 英文词表完整性校验失败');
   }
-  
+
+  WORDLIST.push(...EMBEDDED_BIP39_WORDLIST);
+
+
   shaDisplay.textContent = "SHA256: " + hashHex + " (内置词表)";
   shaDisplay.style.color = "";
   
@@ -2434,11 +2769,13 @@ try {
   await validateWebCrypto();
   await initEmbeddedWordlist();
   await ensureLocalAddressImplementation();
+  securityChecksPassed = true;
   btnGenerate.disabled = false;
 } catch (e) {
   // 错误处理：如果内置词表初始化失败，显示错误
   const errorMsg = e instanceof Error ? e.message : String(e);
   console.error("初始化内置词表时发生错误:", errorMsg);
+  securityChecksPassed = false;
   btnGenerate.disabled = true;
   alert("安全自检失败，已禁止生成。请检查文件完整性。");
 }
@@ -2448,6 +2785,7 @@ try {
 
 btnGenerate.addEventListener("click",async()=>{
   if (generationInProgress) return;
+  if (!securityChecksPassed) { alert("安全自检未通过，已禁止生成。请检查文件完整性。"); return; }
   if(WORDLIST.length!==2048){alert("请先加载词表");return;}
   
   const currentGenerationId = ++generationId;
@@ -2457,6 +2795,7 @@ btnGenerate.addEventListener("click",async()=>{
   mnemonicDiv.classList.add('generating');
   btcAddressInput.value = "";
   addressSection.style.display = 'none';
+  resetBackupCheck();
   let entropy = null;
   
   // 添加一点延迟以显示动画效果
@@ -2467,7 +2806,17 @@ btnGenerate.addEventListener("click",async()=>{
     // 12词 = 128位熵 = 16字节，24词 = 256位熵 = 32字节
     const entropyBytes = wordCount === 12 ? 16 : 32;
     entropy = generateEntropy(entropyBytes);
-    
+
+    // 1b. 可选：将用户填写的补充熵与安全随机数逐字节异或（纵深防御，不替代CSPRNG）
+    const supplementalMask = await deriveSupplementalEntropyMask(extraEntropyInput.value, entropyBytes);
+    if (supplementalMask) {
+      try {
+        for (let i = 0; i < entropy.length; i++) entropy[i] ^= supplementalMask[i];
+      } finally {
+        supplementalMask.fill(0);
+      }
+    }
+
     // 验证熵不为全0（虽然概率极低）
     const allZero = entropy.every(b => b === 0);
     if (allZero) {
@@ -2509,11 +2858,19 @@ btnGenerate.addEventListener("click",async()=>{
   
   for (let i = 0; i < words.length; i++) {
     const wordSpan = document.createElement('span');
-    wordSpan.textContent = words[i].toLowerCase(); // 确保小写
+    wordSpan.className = 'mnemonic-word';
+    const indexLabel = document.createElement('span');
+    indexLabel.className = 'word-index';
+    indexLabel.textContent = (i + 1) + '.'; // 编号便于核对顺序，减少抄写时漏词/错序
+    const wordLabel = document.createElement('span');
+    wordLabel.className = 'word-text';
+    wordLabel.textContent = words[i].toLowerCase(); // 确保小写
+    wordSpan.appendChild(indexLabel);
+    wordSpan.appendChild(wordLabel);
     wordSpan.style.opacity = '0';
     wordSpan.style.transform = 'translateY(10px)';
     wordSpan.style.transition = `all 0.2s ease ${i * 50}ms`;
-    
+
       mnemonicDiv.appendChild(wordSpan);
     
     // 触发重排以应用动画
@@ -2544,6 +2901,17 @@ btnGenerate.addEventListener("click",async()=>{
       if (currentGenerationId !== generationId) return;
       btcAddressInput.value = address;
       addressDerivationPassphrase.textContent = passphrase ? "BIP39 Passphrase 已启用" : "BIP39 Passphrase 为空";
+
+      // 备份核对抽查（可选）：随机抽取两个位置，请用户对照手写备份回填，帮助发现抄写/漏词错误
+      const [quizIndexA, quizIndexB] = pickTwoDistinctIndices(words.length);
+      backupCheckExpected = { words: [words[quizIndexA].toLowerCase(), words[quizIndexB].toLowerCase()] };
+      backupCheckLabel1.textContent = `第 ${quizIndexA + 1} 个单词`;
+      backupCheckLabel2.textContent = `第 ${quizIndexB + 1} 个单词`;
+      backupCheckInput1.value = "";
+      backupCheckInput2.value = "";
+      backupCheckResult.textContent = "";
+      backupCheckResult.className = "backup-check-result";
+      backupCheckSection.style.display = "block";
     } catch (e) {
       // 优化错误处理：不输出完整错误对象，只记录错误类型
       const errorMsg = e instanceof Error ? e.message : '未知错误';
@@ -2551,6 +2919,7 @@ btnGenerate.addEventListener("click",async()=>{
       mnemonicDiv.textContent = "";
       btcAddressInput.value = "";
       addressSection.style.display = 'none';
+      resetBackupCheck();
       alert("地址安全验证失败，本次助记词已从页面清除，请重新生成。");
     }
   } catch (error) {
@@ -2563,6 +2932,7 @@ btnGenerate.addEventListener("click",async()=>{
     mnemonicDiv.textContent = "";
     btcAddressInput.value = "";
     addressSection.style.display = 'none';
+    resetBackupCheck();
   } finally {
     if (entropy) {
       entropy.fill(0);
@@ -2579,6 +2949,7 @@ btnClear.addEventListener("click",()=>{
   clearGeneratedResult();
   resetPassphraseFields();
   updatePassphraseValidation();
+  extraEntropyInput.value = "";
 
   // 添加清除动画
   mnemonicDiv.classList.add('cleared');
@@ -2621,6 +2992,30 @@ btnCopyAddress.addEventListener("click", async () => {
   }
 });
 
+// 备份核对按钮：比对用户回填的两个单词与实际助记词是否一致
+function verifyBackupCheck() {
+  if (!backupCheckExpected) return;
+  const answerA = backupCheckInput1.value.trim().toLowerCase();
+  const answerB = backupCheckInput2.value.trim().toLowerCase();
+  const ok = answerA === backupCheckExpected.words[0] && answerB === backupCheckExpected.words[1];
+  backupCheckResult.textContent = ok
+    ? '✓ 核对通过：这两个位置的单词与页面显示一致。'
+    : '✗ 核对未通过：请对照页面上的助记词重新检查抄写内容。';
+  backupCheckResult.className = 'backup-check-result ' + (ok ? 'backup-check-ok' : 'backup-check-fail');
+}
+
+btnVerifyBackup.addEventListener("click", verifyBackupCheck);
+
+// 回车直接触发核对，减少必须点击按钮的操作步骤
+function handleBackupCheckKeydown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    verifyBackupCheck();
+  }
+}
+backupCheckInput1.addEventListener("keydown", handleBackupCheckKeydown);
+backupCheckInput2.addEventListener("keydown", handleBackupCheckKeydown);
+
 // 添加页面加载完成动画
 document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('loaded');
@@ -2655,6 +3050,23 @@ function cleanupSensitiveData() {
     const passphraseConfirmField = document.getElementById('passphrase-confirm');
     if (passphraseConfirmField) {
       passphraseConfirmField.value = '';
+    }
+
+    // 清理备份核对框（可能已回填真实助记词单词，同属敏感内容）
+    const backupInput1 = document.getElementById('backup-check-input-1');
+    if (backupInput1) {
+      backupInput1.value = '';
+    }
+
+    const backupInput2 = document.getElementById('backup-check-input-2');
+    if (backupInput2) {
+      backupInput2.value = '';
+    }
+
+    // 清理补充熵输入框
+    const extraEntropyField = document.getElementById('extra-entropy-input');
+    if (extraEntropyField) {
+      extraEntropyField.value = '';
     }
 
   } catch (error) {
